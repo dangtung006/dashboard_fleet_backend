@@ -43,7 +43,7 @@ async def create_user(user: UserCreate):
         return SuccessResponse(msg="OK").send(data=resp)
 
     except Exception as E:
-        return InternalServerError(msg=str(E))
+        return InternalServerError(msg=str(E)).send()
 
 
 @user_route.put(
@@ -62,11 +62,11 @@ async def create_user(id: str, user: UserCreate):
         resp = users.update_one({"_id": users.to_object_id(id)}, users.dict())
 
         if resp.modified_count == 0:
-            return BadRequestError(msg="Invalid Role")
+            return BadRequestError(msg="Invalid Role").send()
 
         return SuccessResponse(msg="OK").send(data=UserInDB(id=id, **role.dict()))
     except Exception as E:
-        return InternalServerError(msg=str(E))
+        return InternalServerError(msg=str(E)).send()
 
 
 @user_route.get(
@@ -89,7 +89,7 @@ async def list_users():
 
         return SuccessResponse(msg="OK").send(data=users)
     except Exception as E:
-        return InternalServerError(msg=str(E))
+        return InternalServerError(msg=str(E)).send()
 
 
 @user_route.get(
@@ -104,10 +104,10 @@ async def get_user(user_id: str):
 
         resp = await users.find_by_id(id=user_id)
         if not resp:
-            return NotFoundError(msg="User not found")
+            return NotFoundError(msg="User not found").send()
         return SuccessResponse(msg="OK").send(data=resp)
     except Exception as E:
-        return InternalServerError(msg=str(E))
+        return InternalServerError(msg=str(E)).send()
 
 
 @user_route.delete(
@@ -121,8 +121,8 @@ async def delete_user(user_id: str):
         resp = await roles.delete_by_id(user_id)
 
         if resp.deleted_count == 0:
-            return BadRequestError(msg="User not found")
+            return BadRequestError(msg="User not found").send()
         return SuccessResponse(msg="OK").send(data=resp)
 
     except Exception as E:
-        return InternalServerError(msg=str(E))
+        return InternalServerError(msg=str(E)).send()
