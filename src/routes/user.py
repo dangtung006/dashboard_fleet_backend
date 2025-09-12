@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Header
 
 from src.helper.response import (
     BadRequestError,
@@ -32,6 +32,7 @@ async def create_user(
     create_user=Depends(
         verify_permission(USER_AUTH_TYPE.ADD.value, USER_AUTH_RESOURCE.USER.value)
     ),
+    x_token: str = Header(...),
 ):
 
     try:
@@ -52,6 +53,7 @@ async def create_user(
     create_user=Depends(
         verify_permission(USER_AUTH_TYPE.UPDATE.value, USER_AUTH_RESOURCE.USER.value)
     ),
+    x_token: str = Header(...),
 ):
     try:
         role = await roles.find_by_id(id=user.role_id)
@@ -73,6 +75,7 @@ async def list_users(
     create_user=Depends(
         verify_permission(USER_AUTH_TYPE.VIEW, USER_AUTH_RESOURCE.USER.value)
     ),
+    x_token: str = Header(...),
 ):
     # users = await db.users.find().to_list(100)
     # return [UserInDB(id=str(u["_id"]), **u) for u in users]
@@ -96,6 +99,7 @@ async def get_user(
     create_user=Depends(
         verify_permission(USER_AUTH_TYPE.VIEW, USER_AUTH_RESOURCE.USER.value)
     ),
+    x_token: str = Header(...),
 ):
     try:
 
@@ -113,6 +117,7 @@ async def delete_user(
     create_user=Depends(
         verify_permission(USER_AUTH_TYPE.VIEW, USER_AUTH_RESOURCE.USER.value)
     ),
+    x_token: str = Header(...),
 ):
     try:
         resp = await roles.delete_by_id(user_id)
