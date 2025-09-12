@@ -9,6 +9,7 @@ from src.helper.response import (
 
 from src.extension.db import users, roles
 from src.dto.user import UserCreate, UserInDB
+from src.dependencies.auth_gaurd import verify_permission
 
 # from src.dependencies.permission import require_permission
 
@@ -24,7 +25,11 @@ user_route = APIRouter(tags=["Users"])
 #     pass
 
 
-@user_route.post("/add", response_model=UserInDB)
+@user_route.post(
+    "/add",
+    response_model=UserInDB,
+    create_user=Depends(verify_permission("add", "user")),
+)
 async def create_user(user: UserCreate):
 
     try:
@@ -38,7 +43,11 @@ async def create_user(user: UserCreate):
         return InternalServerError(msg=str(E))
 
 
-@user_route.put("/update/{id}", response_model=UserInDB)
+@user_route.put(
+    "/update/{id}",
+    response_model=UserInDB,
+    create_user=Depends(verify_permission("update", "user")),
+)
 async def create_user(id: str, user: UserCreate):
     try:
         role = await roles.find_by_id(id=user.role_id)
@@ -55,7 +64,11 @@ async def create_user(id: str, user: UserCreate):
         return InternalServerError(msg=str(E))
 
 
-@user_route.get("/", response_model=list[UserInDB])
+@user_route.get(
+    "/",
+    response_model=list[UserInDB],
+    create_user=Depends(verify_permission("view", "user")),
+)
 async def list_users():
     # users = await db.users.find().to_list(100)
     # return [UserInDB(id=str(u["_id"]), **u) for u in users]
@@ -72,7 +85,11 @@ async def list_users():
         return InternalServerError(msg=str(E))
 
 
-@user_route.get("/detail/{user_id}", response_model=UserInDB)
+@user_route.get(
+    "/detail/{user_id}",
+    response_model=UserInDB,
+    create_user=Depends(verify_permission("view", "user")),
+)
 async def get_user(user_id: str):
     try:
 
@@ -84,7 +101,10 @@ async def get_user(user_id: str):
         return InternalServerError(msg=str(E))
 
 
-@user_route.delete("/remove/{user_id}")
+@user_route.delete(
+    "/remove/{user_id}",
+    create_user=Depends(verify_permission("delete", "user")),
+)
 async def delete_user(user_id: str):
     try:
         resp = await roles.delete_by_id(user_id)

@@ -38,5 +38,20 @@ async def verify_x_token(request: Request):
         )
 
 
-async def verify(request: Request):
-    pass
+def verify_permission(action: str, resource: str):
+
+    async def has_permission(current_user=Depends(verify_x_token)):
+        # role = current_user.get("role")
+        # if not role:
+        #     raise HTTPException(status_code=403, detail="Role not found")
+
+        # permissions = role.get("permissions", {})
+        # allowed = permissions.get(action, {}).get(resource, False)
+
+        # if not allowed:
+        #     raise HTTPException(
+        #         status_code=403, detail=f"Permission denied: {action} {resource}"
+        #     )
+        return current_user
+
+    return has_permission
