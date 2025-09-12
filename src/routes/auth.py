@@ -133,8 +133,7 @@ async def check_user(
         # print(resp)
         # return SuccessResponse(msg="OK").send(data=user_action.serialize(resp))
         return SuccessResponse(msg="OK").send(data=x_token)
-
-        return x_token
+        # return x_token
 
     except Exception as E:
         return InternalServerError(msg=str(E))

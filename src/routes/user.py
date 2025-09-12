@@ -10,6 +10,7 @@ from src.helper.response import (
 from src.extension.db import users, roles
 from src.dto.user import UserCreate, UserInDB
 from src.dependencies.auth_gaurd import verify_permission
+from src.app.app_conf import USER_AUTH_RESOURCE, USER_AUTH_TYPE
 
 # from src.dependencies.permission import require_permission
 
@@ -28,7 +29,9 @@ user_route = APIRouter(tags=["Users"])
 @user_route.post(
     "/add",
     response_model=UserInDB,
-    create_user=Depends(verify_permission("add", "user")),
+    create_user=Depends(
+        verify_permission(USER_AUTH_TYPE.ADD.value, USER_AUTH_RESOURCE.USER.value)
+    ),
 )
 async def create_user(user: UserCreate):
 
@@ -46,7 +49,9 @@ async def create_user(user: UserCreate):
 @user_route.put(
     "/update/{id}",
     response_model=UserInDB,
-    create_user=Depends(verify_permission("update", "user")),
+    create_user=Depends(
+        verify_permission(USER_AUTH_TYPE.EDIT.value, USER_AUTH_RESOURCE.USER.value)
+    ),
 )
 async def create_user(id: str, user: UserCreate):
     try:
@@ -67,7 +72,9 @@ async def create_user(id: str, user: UserCreate):
 @user_route.get(
     "/",
     response_model=list[UserInDB],
-    create_user=Depends(verify_permission("view", "user")),
+    create_user=Depends(
+        verify_permission(USER_AUTH_TYPE.VIEW, USER_AUTH_RESOURCE.USER.value)
+    ),
 )
 async def list_users():
     # users = await db.users.find().to_list(100)
@@ -88,7 +95,9 @@ async def list_users():
 @user_route.get(
     "/detail/{user_id}",
     response_model=UserInDB,
-    create_user=Depends(verify_permission("view", "user")),
+    create_user=Depends(
+        verify_permission(USER_AUTH_TYPE.VIEW, USER_AUTH_RESOURCE.USER.value)
+    ),
 )
 async def get_user(user_id: str):
     try:
@@ -103,7 +112,9 @@ async def get_user(user_id: str):
 
 @user_route.delete(
     "/remove/{user_id}",
-    create_user=Depends(verify_permission("delete", "user")),
+    create_user=Depends(
+        verify_permission(USER_AUTH_TYPE.VIEW, USER_AUTH_RESOURCE.USER.value)
+    ),
 )
 async def delete_user(user_id: str):
     try:
