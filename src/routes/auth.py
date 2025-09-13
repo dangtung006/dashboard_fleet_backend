@@ -66,7 +66,7 @@ async def login(request: Request, response: Response, formData: AuthBase):
         session_id = str(uuid4())
         print("session_id:::", session_id)
         now = datetime.datetime.utcnow()
-        expire_at = now + datetime.timedelta(minutes=2)
+        expire_at = now + datetime.timedelta(minutes=60)
 
         token = await user_action.insert_one(
             {

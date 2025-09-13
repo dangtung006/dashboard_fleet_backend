@@ -73,12 +73,11 @@ async def create_user(
 @user_route.get("/", response_model=list[UserInDB])
 async def list_users(
     create_user=Depends(
-        verify_permission(USER_AUTH_TYPE.VIEW, USER_AUTH_RESOURCE.USER.value)
+        verify_permission(USER_AUTH_TYPE.VIEW.value, USER_AUTH_RESOURCE.USER.value)
     ),
     x_token: str = Header(...),
 ):
-    # users = await db.users.find().to_list(100)
-    # return [UserInDB(id=str(u["_id"]), **u) for u in users]
+
     try:
 
         # resp = await users.find_list(page=1, page_size=10)
@@ -88,7 +87,7 @@ async def list_users(
         async for doc in resp:
             data.append(roles.serialize(doc))
 
-        return SuccessResponse(msg="OK").send(data=users)
+        return SuccessResponse(msg="OK").send(data=data)
     except Exception as E:
         return InternalServerError(msg=str(E)).send()
 
@@ -97,7 +96,7 @@ async def list_users(
 async def get_user(
     user_id: str,
     create_user=Depends(
-        verify_permission(USER_AUTH_TYPE.VIEW, USER_AUTH_RESOURCE.USER.value)
+        verify_permission(USER_AUTH_TYPE.VIEW.value, USER_AUTH_RESOURCE.USER.value)
     ),
     x_token: str = Header(...),
 ):
@@ -115,7 +114,7 @@ async def get_user(
 async def delete_user(
     user_id: str,
     create_user=Depends(
-        verify_permission(USER_AUTH_TYPE.VIEW, USER_AUTH_RESOURCE.USER.value)
+        verify_permission(USER_AUTH_TYPE.VIEW.value, USER_AUTH_RESOURCE.USER.value)
     ),
     x_token: str = Header(...),
 ):
