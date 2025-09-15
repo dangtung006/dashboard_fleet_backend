@@ -17,5 +17,20 @@ class UserCreate(UserBase):
     pass
 
 
+class UserUpdate(UserBase):
+    name: str
+    email: EmailStr
+    phone: str
+    gender: Literal[0, 1] = 1
+
+
+class UserStatusUpdate(BaseModel):
+    status: Literal[0, 1]
+
+
+class UserRoleUpdate(BaseModel):
+    role_id: Optional[str] = ""
+
+
 class UserInDB(UserBase):
     id: str

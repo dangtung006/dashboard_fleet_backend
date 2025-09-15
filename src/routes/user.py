@@ -8,7 +8,13 @@ from src.helper.response import (
 )
 
 from src.extension.db import users, roles
-from src.dto.user import UserCreate, UserInDB
+from src.dto.user import (
+    UserCreate,
+    UserInDB,
+    UserRoleUpdate,
+    UserStatusUpdate,
+    UserUpdate,
+)
 from src.dependencies.auth_gaurd import verify_permission
 from src.app.app_conf import USER_AUTH_RESOURCE, USER_AUTH_TYPE
 
@@ -68,9 +74,9 @@ async def create_user(
 
 
 @user_route.put("/update/{id}", response_model=UserInDB)
-async def create_user(
+async def update_user(
     id: str,
-    user: UserCreate,
+    user: UserUpdate,
     create_user=Depends(
         verify_permission(USER_AUTH_TYPE.UPDATE.value, USER_AUTH_RESOURCE.USER.value)
     ),
@@ -88,6 +94,69 @@ async def create_user(
 
         return SuccessResponse(msg="OK").send(data=UserInDB(id=id, **role.dict()))
     except Exception as E:
+        return InternalServerError(msg=str(E)).send()
+
+
+@user_route.patch("/status/{user_id}")
+async def update_user_status(
+    user_id: str,
+    status: UserStatusUpdate,
+    create_user=Depends(
+        verify_permission(USER_AUTH_TYPE.VIEW.value, USER_AUTH_RESOURCE.USER.value)
+    ),
+    x_token: str = Header(...),
+):
+    try:
+
+        req_body = status.dict()
+        user = await users.find_by_id(id=user_id)
+
+        if not user:
+            return BadRequestError(msg="Invalid User").send()
+
+        resp = users.update_one(
+            filter={"_id": users.to_object_id(user_id)},
+            update={"status": req_body["status"]},
+        )
+
+        if resp.modified_count == 0:
+            return BadRequestError(msg="Invalid Updated").send()
+
+        return SuccessResponse(msg="OK").send(data=True)
+
+    except Exception as E:
+        return InternalServerError(msg=str(E)).send()
+
+
+@user_route.patch("/role/{user_id}")
+async def update_user_role(
+    user_id: str,
+    role: UserStatusUpdate,
+    create_user=Depends(
+        verify_permission(USER_AUTH_TYPE.VIEW.value, USER_AUTH_RESOURCE.USER.value)
+    ),
+    x_token: str = Header(...),
+):
+    try:
+
+        req_body = role.dict()
+        user = await users.find_by_id(id=user_id)
+
+        if not user:
+            return BadRequestError(msg="Invalid User").send()
+
+        resp = users.update_one(
+            filter={"_id": users.to_object_id(user_id)},
+            update={"role_id": users.to_object_id((req_body["role_id"]))},
+        )
+
+        if resp.modified_count == 0:
+            return BadRequestError(msg="Invalid Updated").send()
+
+        return SuccessResponse(msg="OK").send(data=True)
+
+    except Exception as E:
+        print("EEEE::::::", str(E))
         return InternalServerError(msg=str(E)).send()
 
 
@@ -143,11 +212,12 @@ async def delete_user(
     x_token: str = Header(...),
 ):
     try:
-        resp = await roles.delete_by_id(user_id)
+        resp = await users.delete_by_id(user_id)
 
         if resp.deleted_count == 0:
             return BadRequestError(msg="User not found").send()
-        return SuccessResponse(msg="OK").send(data=resp)
+        return SuccessResponse(msg="OK").send(data=True)
 
     except Exception as E:
+        print("EEEE::::::", str(E))
         return InternalServerError(msg=str(E)).send()
