@@ -26,7 +26,10 @@ user_route = APIRouter(tags=["Users"])
 #     pass
 
 
-@user_route.post("/add", response_model=UserInDB)
+@user_route.post(
+    "/add",
+    # response_model=UserInDB
+)
 async def create_user(
     user: UserCreate,
     create_user=Depends(
@@ -36,14 +39,32 @@ async def create_user(
 ):
 
     try:
-        role = await roles.find_by_id(id=user.role_id)
+        role = await roles.find_one_by_conditions({"name": "default"})
         if not role:
-            return BadRequestError(msg="Invalid Role")
-        resp = users.insert_one(*user.dict())
-        return SuccessResponse(msg="OK").send(data=resp)
+            return BadRequestError(msg="Invalid Role").send()
+
+        role = roles.serialize(role)
+        role_id = role["_id"]
+        req_body = user.dict()
+
+        insert_data = {
+            "role_id": roles.to_object_id(role_id),
+            "name": req_body["name"],
+            "email": req_body["email"],
+            "status": req_body["status"],
+            "gender": req_body["gender"],
+        }
+
+        resp = await users.insert_one(insert_data)
+        # print("resp:::", resp)
+        # print("resp.inserted_id:::", resp.inserted_id)
+        # data = UserInDB(id=str(resp.inserted_id), **user.dict())
+        # print("data:::", users.serialize(data))
+        return SuccessResponse(msg="OK").send(data=str(resp.inserted_id))
 
     except Exception as E:
-        return InternalServerError(msg=str(E)).send()
+        print("e::", E)
+        return InternalServerError(msg="Internal Err").send()
 
 
 @user_route.put("/update/{id}", response_model=UserInDB)
@@ -81,14 +102,17 @@ async def list_users(
     try:
 
         # resp = await users.find_list(page=1, page_size=10)
-        resp = await users.find_all()
+        resp = await users.get_users_with_roles()
+        print("respLLL", resp)
         data = []
 
-        async for doc in resp:
+        for doc in resp:
+            print("doc::", doc)
             data.append(roles.serialize(doc))
 
         return SuccessResponse(msg="OK").send(data=data)
     except Exception as E:
+        print("ERRR:", E)
         return InternalServerError(msg=str(E)).send()
 
 
@@ -102,10 +126,10 @@ async def get_user(
 ):
     try:
 
-        resp = await users.find_by_id(id=user_id)
+        resp = await users.get_user_detail_with_role(user_id)
         if not resp:
             return NotFoundError(msg="User not found").send()
-        return SuccessResponse(msg="OK").send(data=resp)
+        return SuccessResponse(msg="OK").send(data=users.serialize(resp))
     except Exception as E:
         return InternalServerError(msg=str(E)).send()
 

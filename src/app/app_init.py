@@ -38,6 +38,55 @@ http_client = (
 
 async def initAcc():
     await user_action.create_idx("expireAt")
+    default_role = await roles.find_one_by_conditions({"name": "default"})
+    if not default_role:
+        default_resp = await roles.insert_one(
+            {
+                "name": "default",
+                "permissions": {
+                    "add": {
+                        "charging_station": False,
+                        "dashboard": False,
+                        "robot": False,
+                        "robot_information": False,
+                        "role_and_permission": False,
+                        "statics": False,
+                        "user": False,
+                        "user_information": False,
+                    },
+                    "view": {
+                        "charging_station": False,
+                        "dashboard": False,
+                        "robot": False,
+                        "robot_information": False,
+                        "role_and_permission": False,
+                        "statics": False,
+                        "user": False,
+                        "user_information": False,
+                    },
+                    "edit": {
+                        "charging_station": False,
+                        "dashboard": False,
+                        "robot": False,
+                        "robot_information": False,
+                        "role_and_permission": False,
+                        "statics": False,
+                        "user": False,
+                        "user_information": False,
+                    },
+                    "delete": {
+                        "charging_station": False,
+                        "dashboard": False,
+                        "robot": False,
+                        "robot_information": False,
+                        "role_and_permission": False,
+                        "statics": False,
+                        "user": False,
+                        "user_information": False,
+                    },
+                },
+            }
+        )
     admin = await roles.find_one_by_conditions({"name": "root"})
     if not admin:
 

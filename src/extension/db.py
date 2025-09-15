@@ -141,6 +141,49 @@ class USERS(DB_HELPER):
         super().__init__()
         self.init_collection(self.db["users"])
 
+    async def get_users_with_roles(self):
+        try:
+            pipeline = [
+                {
+                    "$lookup": {
+                        "from": "roles",  # collection role
+                        "localField": "role_id",  # field trong user
+                        "foreignField": "_id",  # field trong role
+                        "as": "role",  # tên field output
+                    }
+                },
+                {"$unwind": {"path": "$role", "preserveNullAndEmptyArrays": True}},
+            ]
+            return await self.collection.aggregate(pipeline).to_list(length=None)
+        except Exception as E:
+            print(str(E))
+            return False
+
+    async def get_user_detail_with_role(self, user_id):
+        try:
+            user = await self.collection.aggregate(
+                [
+                    {"$match": {"_id": ObjectId(user_id)}},
+                    {
+                        "$lookup": {
+                            "from": "roles",  # collection role
+                            "localField": "role_id",  # field trong users
+                            "foreignField": "_id",  # field trong roles
+                            "as": "role",  # output alias
+                        }
+                    },
+                    {"$unwind": "$role"},  # lấy object thay vì mảng
+                ]
+            ).to_list(1)
+
+            print("usererererererererrerererrerererrerererere:::", user[0])
+
+            return user[0]
+
+        except Exception as E:
+            print(str(E))
+            return False
+
 
 class USER_ACTION(DB_HELPER):
     def __init__(self):
