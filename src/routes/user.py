@@ -70,7 +70,7 @@ async def create_user(
         return InternalServerError(msg=str(E)).send()
 
 
-@user_route.get("/", response_model=list[UserInDB])
+@user_route.get("", response_model=list[UserInDB])
 async def list_users(
     create_user=Depends(
         verify_permission(USER_AUTH_TYPE.VIEW.value, USER_AUTH_RESOURCE.USER.value)

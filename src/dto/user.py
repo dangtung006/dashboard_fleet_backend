@@ -7,8 +7,10 @@ from bson import ObjectId
 class UserBase(BaseModel, BaseDTO):
     name: str
     email: EmailStr
+    phone: str
+    gender: Literal[0, 1] = 1
     role_id: str  # lưu _id từ Role
-    status: Literal["active", "inactive"] = "active"
+    status: Literal[0, 1] = 1
 
 
 class UserCreate(UserBase):

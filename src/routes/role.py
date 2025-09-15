@@ -36,7 +36,7 @@ async def update_role(role_id: str, role: RoleCreate):
         return InternalServerError(msg=str(E))
 
 
-@role_route.get("/list", response_model=list[RoleInDB])
+@role_route.get("", response_model=list[RoleInDB])
 async def list_roles():
     # roles = await db.roles.find().to_list(100)
     # return [RoleInDB(id=str(r["_id"]), **r) for r in roles]
