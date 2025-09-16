@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from src.dto.role import RoleInDB, RoleCreate
+from src.dto.role import RoleInDB, RoleCreate, PermisionUpdate
 
 from src.helper.response import (
     BadRequestError,
@@ -34,6 +34,45 @@ async def update_role(role_id: str, role: RoleCreate):
         return SuccessResponse(msg="OK").send(data=RoleInDB(id=role_id, **role.dict()))
     except Exception as E:
         return InternalServerError(msg=str(E))
+
+
+@role_route.patch("/permision/{role_id}")
+async def update_role_permission(
+    role_id: str,
+    permision: PermisionUpdate,
+    # create_user=Depends(
+    #     verify_permission(USER_AUTH_TYPE.VIEW.value, USER_AUTH_RESOURCE.USER.value)
+    # ),
+    # x_token: str = Header(...),
+):
+    try:
+
+        req_body = permision.dict()
+        resource = req_body["resource"]
+        action = req_body["action"]
+        val = req_body["val"]
+
+        if not resource or not action:
+            return BadRequestError(msg="Invalid request").send()
+
+        role = await roles.find_by_id(id=role_id)
+
+        if not role:
+            return BadRequestError(msg="Invalid User").send()
+
+        permisionUpdate = f"permissions.{resource}.{action}"
+        resp = await roles.update_one(
+            filter={"_id": roles.to_object_id(role_id)},
+            update={permisionUpdate: val},
+        )
+
+        if resp.modified_count == 0:
+            return BadRequestError(msg="Invalid Updated").send()
+
+        return SuccessResponse(msg="OK").send(data=True)
+
+    except Exception as E:
+        return InternalServerError(msg=str(E)).send()
 
 
 @role_route.get("", response_model=list[RoleInDB])

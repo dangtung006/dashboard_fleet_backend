@@ -21,6 +21,12 @@ class Permissions(BaseModel):
     delete: PermissionGroup = PermissionGroup()
 
 
+class PermisionUpdate(BaseModel):
+    resource: str
+    action: str
+    val: bool
+
+
 class RoleBase(BaseModel):
     name: str = Field(..., example="Leader")
     permissions: Permissions = Permissions()

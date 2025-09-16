@@ -73,7 +73,10 @@ async def create_user(
         return InternalServerError(msg="Internal Err").send()
 
 
-@user_route.put("/update/{id}", response_model=UserInDB)
+@user_route.put(
+    "/update/{id}",
+    # response_model=UserInDB
+)
 async def update_user(
     id: str,
     user: UserUpdate,
@@ -83,16 +86,19 @@ async def update_user(
     x_token: str = Header(...),
 ):
     try:
-        role = await roles.find_by_id(id=user.role_id)
-        if not role:
-            return BadRequestError(msg="Invalid Role")
+        req_body = user.dict()
+        print("req_body::::::", req_body)
+        user = await users.find_by_id(id)
+        if not user:
+            return BadRequestError(msg="Invalid User").send()
 
-        resp = users.update_one({"_id": users.to_object_id(id)}, users.dict())
+        resp = await users.update_one({"_id": users.to_object_id(id)}, req_body)
 
         if resp.modified_count == 0:
             return BadRequestError(msg="Invalid Role").send()
 
-        return SuccessResponse(msg="OK").send(data=UserInDB(id=id, **role.dict()))
+        # return SuccessResponse(msg="OK").send(data=UserInDB(id=id, **role.dict()))
+        return SuccessResponse(msg="OK").send(data=True)
     except Exception as E:
         return InternalServerError(msg=str(E)).send()
 
@@ -114,7 +120,7 @@ async def update_user_status(
         if not user:
             return BadRequestError(msg="Invalid User").send()
 
-        resp = users.update_one(
+        resp = await users.update_one(
             filter={"_id": users.to_object_id(user_id)},
             update={"status": req_body["status"]},
         )
@@ -131,7 +137,7 @@ async def update_user_status(
 @user_route.patch("/role/{user_id}")
 async def update_user_role(
     user_id: str,
-    role: UserStatusUpdate,
+    role: UserRoleUpdate,
     create_user=Depends(
         verify_permission(USER_AUTH_TYPE.VIEW.value, USER_AUTH_RESOURCE.USER.value)
     ),
@@ -140,12 +146,13 @@ async def update_user_role(
     try:
 
         req_body = role.dict()
+        print("req_body::::::", req_body)
         user = await users.find_by_id(id=user_id)
 
         if not user:
             return BadRequestError(msg="Invalid User").send()
 
-        resp = users.update_one(
+        resp = await users.update_one(
             filter={"_id": users.to_object_id(user_id)},
             update={"role_id": users.to_object_id((req_body["role_id"]))},
         )

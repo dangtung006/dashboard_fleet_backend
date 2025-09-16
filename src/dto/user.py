@@ -10,18 +10,18 @@ class UserBase(BaseModel, BaseDTO):
     phone: str
     role_id: Optional[str] = ""  # lưu _id từ Role
     status: Literal[0, 1] = 1
-    gender: Literal[0, 1] = 1
+    gender: Literal[0, 1, 2] = 1
 
 
 class UserCreate(UserBase):
     pass
 
 
-class UserUpdate(UserBase):
+class UserUpdate(BaseModel):
     name: str
     email: EmailStr
     phone: str
-    gender: Literal[0, 1] = 1
+    gender: Literal[0, 1, 2] = 1
 
 
 class UserStatusUpdate(BaseModel):
