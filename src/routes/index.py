@@ -5,6 +5,7 @@ from src.routes.caller import caller_route
 from src.routes.role import role_route
 from src.routes.user import user_route
 from src.routes.auth import auth_route
+from src.routes.map import robot_maps_route
 
 from src.routes.ws import ws_router
 
@@ -27,6 +28,7 @@ route_conf = [
     {"name": "/user", "route": user_route, "has_sub": []},
     {"name": "/caller", "route": caller_route, "has_sub": []},
     {"name": "/auth", "route": auth_route, "has_sub": []},
+    {"name": "/robot_map", "route": robot_maps_route, "has_sub": []},
 ]
 
 

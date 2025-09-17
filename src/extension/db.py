@@ -197,9 +197,16 @@ class ROLES(DB_HELPER):
         self.init_collection(self.db["roles"])
 
 
+class ROBOT_MAPS(DB_HELPER):
+    def __init__(self):
+        super().__init__()
+        self.init_collection(self.db["robot_maps"])
+
+
 robot_stations = ROBOT_STATIONS()
 robots = ROBOTS()
 callers = CALLERS()
 users = USERS()
 roles = ROLES()
 user_action = USER_ACTION()
+robot_maps = ROBOT_MAPS()
