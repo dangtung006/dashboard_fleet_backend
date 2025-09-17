@@ -62,6 +62,7 @@ async def create_user(
         }
 
         resp = await users.insert_one(insert_data)
+
         # print("resp:::", resp)
         # print("resp.inserted_id:::", resp.inserted_id)
         # data = UserInDB(id=str(resp.inserted_id), **user.dict())

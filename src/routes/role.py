@@ -12,13 +12,18 @@ from src.extension.db import roles
 role_route = APIRouter(tags=["Roles"])
 
 
-@role_route.post("/add", response_model=RoleInDB)
+@role_route.post(
+    "/add",
+    # response_model=RoleInDB
+)
 async def create_role(role: RoleCreate):
     try:
-        resp = roles.insert_one(role.dict())
-        return SuccessResponse(msg="OK").send(
-            data=RoleInDB(id=str(resp.inserted_id), **role.dict())
-        )
+        resp = await roles.insert_one(role.dict())
+        if resp.inserted_id:
+            createdRole = await roles.find_by_id(
+                roles.to_object_id(str(resp.inserted_id))
+            )
+        return SuccessResponse(msg="OK").send(data=roles.serialize(createdRole))
     except Exception as E:
         return InternalServerError(msg=str(E))
 
@@ -26,12 +31,23 @@ async def create_role(role: RoleCreate):
 @role_route.put("/update/{role_id}", response_model=RoleInDB)
 async def update_role(role_id: str, role: RoleCreate):
     try:
-        resp = roles.update_one({"_id": roles.to_object_id(role_id)}, role.dict())
+        req_body = role.dict()
+        data = await roles.find_by_id(id=role_id)
+
+        if not data:
+            return BadRequestError(msg="Role Not Found").send()
+
+        resp = await roles.update_one({"_id": roles.to_object_id(role_id)}, req_body)
+        # print("resp:::", resp.acknowledged)
+        # print("resp:::", resp.matched_count)
+        # print("resp:::", resp.modified_count)
+        # print("resp:::", resp.raw_result)
 
         if resp.modified_count == 0:
-            return BadRequestError(msg="Invalid Role")
+            return BadRequestError(msg="Invalid request").send()
 
-        return SuccessResponse(msg="OK").send(data=RoleInDB(id=role_id, **role.dict()))
+        # return SuccessResponse(msg="OK").send(data=RoleInDB(id=role_id, **role.dict()))
+        return SuccessResponse(msg="OK").send(data={**req_body, "_id": role_id})
     except Exception as E:
         return InternalServerError(msg=str(E))
 
@@ -96,44 +112,44 @@ async def get_permissions():
     try:
         configs = {
             "add": {
-                "charging_station": False,
-                "dashboard": False,
+                "monitor": False,
                 "robot": False,
-                "robot_information": False,
-                "role_and_permission": False,
-                "statics": False,
+                "robot_detail": False,
+                "caller": False,
+                "charging_station": False,
                 "user": False,
-                "user_information": False,
+                "user_detail": False,
+                "statistics": False,
             },
             "view": {
-                "charging_station": False,
-                "dashboard": False,
+                "monitor": False,
                 "robot": False,
-                "robot_information": False,
-                "role_and_permission": False,
-                "statics": False,
+                "robot_detail": False,
+                "caller": False,
+                "charging_station": False,
                 "user": False,
-                "user_information": False,
+                "user_detail": False,
+                "statistics": False,
             },
             "edit": {
-                "charging_station": False,
-                "dashboard": False,
+                "monitor": False,
                 "robot": False,
-                "robot_information": False,
-                "role_and_permission": False,
-                "statics": False,
+                "robot_detail": False,
+                "caller": False,
+                "charging_station": False,
                 "user": False,
-                "user_information": False,
+                "user_detail": False,
+                "statistics": False,
             },
             "delete": {
-                "charging_station": False,
-                "dashboard": False,
+                "monitor": False,
                 "robot": False,
-                "robot_information": False,
-                "role_and_permission": False,
-                "statics": False,
+                "robot_detail": False,
+                "caller": False,
+                "charging_station": False,
                 "user": False,
-                "user_information": False,
+                "user_detail": False,
+                "statistics": False,
             },
         }
 
@@ -154,12 +170,12 @@ async def get_role(role_id: str):
         return InternalServerError(msg=str(E))
 
 
-@role_route.delete("/{role_id}")
+@role_route.delete("/delete/{role_id}")
 async def delete_role(role_id: str):
     try:
         resp = await roles.delete_by_id(role_id)
         if resp.deleted_count == 0:
             return BadRequestError(msg="Role not found")
-        return SuccessResponse(msg="OK").send(data=resp)
+        return SuccessResponse(msg="OK").send(data=True)
     except Exception as E:
         return InternalServerError(msg=str(E))

@@ -1,6 +1,6 @@
 from .base import BaseDTO
 from pydantic import BaseModel, Field
-from typing import Optional, Dict
+from typing import Optional, Optional
 
 
 class PermissionGroup(BaseModel):
@@ -29,6 +29,7 @@ class PermisionUpdate(BaseModel):
 
 class RoleBase(BaseModel):
     name: str = Field(..., example="Leader")
+    status: Optional[int] = 1
     permissions: Permissions = Permissions()
 
 
