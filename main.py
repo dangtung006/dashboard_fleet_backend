@@ -27,7 +27,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-APP_HOST = "192.168.68.118"
+APP_HOST = "192.168.68.126"
 APP_PORT = 3000
 
 

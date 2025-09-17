@@ -91,6 +91,58 @@ async def list_roles():
         return InternalServerError(msg=str(E))
 
 
+@role_route.get("/permissions")
+async def get_permissions():
+    try:
+        configs = {
+            "add": {
+                "charging_station": False,
+                "dashboard": False,
+                "robot": False,
+                "robot_information": False,
+                "role_and_permission": False,
+                "statics": False,
+                "user": False,
+                "user_information": False,
+            },
+            "view": {
+                "charging_station": False,
+                "dashboard": False,
+                "robot": False,
+                "robot_information": False,
+                "role_and_permission": False,
+                "statics": False,
+                "user": False,
+                "user_information": False,
+            },
+            "edit": {
+                "charging_station": False,
+                "dashboard": False,
+                "robot": False,
+                "robot_information": False,
+                "role_and_permission": False,
+                "statics": False,
+                "user": False,
+                "user_information": False,
+            },
+            "delete": {
+                "charging_station": False,
+                "dashboard": False,
+                "robot": False,
+                "robot_information": False,
+                "role_and_permission": False,
+                "statics": False,
+                "user": False,
+                "user_information": False,
+            },
+        }
+
+        return SuccessResponse(msg="OK").send(data=configs)
+    except Exception as E:
+        print(str(E))
+        return InternalServerError(msg=str(E))
+
+
 @role_route.get("/{role_id}", response_model=RoleInDB)
 async def get_role(role_id: str):
     try:
@@ -111,16 +163,3 @@ async def delete_role(role_id: str):
         return SuccessResponse(msg="OK").send(data=resp)
     except Exception as E:
         return InternalServerError(msg=str(E))
-
-
-# # Permission
-# @role_route.update_permission("/{role_id}")
-# async def delete_role(role_id: str):
-#     try:
-#         # resp = await roles.delete_by_id(role_id)
-#         # if resp.deleted_count == 0:
-#         #     return BadRequestError(msg="Role not found")
-#         # return SuccessResponse(msg="OK").send(data=resp)
-#         pass
-#     except Exception as E:
-#         return InternalServerError(msg=str(E))

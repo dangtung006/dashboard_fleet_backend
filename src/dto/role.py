@@ -1,17 +1,17 @@
 from .base import BaseDTO
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Dict
 
 
 class PermissionGroup(BaseModel):
-    user: bool = False
+    monitor: bool = False
     robot: bool = False
-    role_and_permission: bool = False
+    robot_detail: bool = False
+    caller: bool = False
     charging_station: bool = False
-    dashboard: bool = False
-    user_information: bool = False
-    robot_information: bool = False
-    statics: bool = False
+    user: bool = False
+    user_detail: bool = False
+    statistics: bool = False
 
 
 class Permissions(BaseModel):
