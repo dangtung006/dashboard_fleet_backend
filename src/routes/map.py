@@ -29,14 +29,17 @@ async def create_map(map: MapCreate):
         return InternalServerError(msg=str(E))
 
 
-@robot_maps_route.put("/update/{map_id}", response_model=MapInDB)
-async def update_map(map_id: str, role: MapCreate):
+@robot_maps_route.put(
+    "/update/{map_id}", 
+    # response_model=MapInDB
+)
+async def update_map(map_id: str, robotMap: MapCreate):
     try:
-        req_body = role.dict()
+        req_body = robotMap.dict()
         data = await robot_maps.find_by_id(id=map_id)
 
         if not data:
-            return BadRequestError(msg="Role Not Found").send()
+            return BadRequestError(msg="Map Not Found").send()
 
         resp = await robot_maps.update_one(
             {"_id": robot_maps.to_object_id(map_id)}, req_body

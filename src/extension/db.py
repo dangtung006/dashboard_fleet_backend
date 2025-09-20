@@ -202,10 +202,16 @@ class ROBOT_MAPS(DB_HELPER):
         super().__init__()
         self.init_collection(self.db["robot_maps"])
 
+class CHARING_STATIONS(DB_HELPER):
+    def __init__(self):
+        super().__init__()
+        self.init_collection(self.db["charing_stations"])
+
 
 robot_stations = ROBOT_STATIONS()
 robots = ROBOTS()
 callers = CALLERS()
+charing_stations = CHARING_STATIONS()
 users = USERS()
 roles = ROLES()
 user_action = USER_ACTION()
