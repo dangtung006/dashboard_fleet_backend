@@ -16,9 +16,9 @@ charing_station_route = APIRouter(tags=["Charing Stations"])
     "/add",
     # response_model=RoleInDB
 )
-async def create_charing_station(role: CharingStationCreate):
+async def create_charing_station(charing: CharingStationCreate):
     try:
-        resp = await charing_stations.insert_one(role.dict())
+        resp = await charing_stations.insert_one(charing.dict())
         if resp.inserted_id:
             createdRole = await charing_stations.find_by_id(
                 charing_stations.to_object_id(str(resp.inserted_id))
@@ -29,20 +29,20 @@ async def create_charing_station(role: CharingStationCreate):
 
 
 @charing_station_route.put("/update/{role_id}", response_model=CharingStationInDB)
-async def update_charing_station(role_id: str, role: CharingStationCreate):
+async def update_charing_station(charing_id: str, charing: CharingStationCreate):
     try:
-        req_body = role.dict()
-        data = await charing_stations.find_by_id(id=role_id)
+        req_body = charing.dict()
+        data = await charing_stations.find_by_id(id=charing_id)
 
         if not data:
             return BadRequestError(msg="Role Not Found").send()
 
-        resp = await charing_stations.update_one({"_id": charing_stations.to_object_id(role_id)}, req_body)
+        resp = await charing_stations.update_one({"_id": charing_stations.to_object_id(charing_id)}, req_body)
         if resp.modified_count == 0:
             return BadRequestError(msg="Invalid request").send()
 
         # return SuccessResponse(msg="OK").send(data=RoleInDB(id=role_id, **role.dict()))
-        return SuccessResponse(msg="OK").send(data={**req_body, "_id": role_id})
+        return SuccessResponse(msg="OK").send(data={**req_body, "_id": charing_id})
     except Exception as E:
         return InternalServerError(msg=str(E))
 
@@ -64,7 +64,7 @@ async def list_charing_stations():
 
 
 
-@charing_station_route.get("/{role_id}", response_model=CharingStationInDB)
+@charing_station_route.get("/detail/{role_id}", response_model=CharingStationInDB)
 async def get_charing_station(role_id: str):
     try:
         resp = await charing_stations.find_by_id(id=role_id)
