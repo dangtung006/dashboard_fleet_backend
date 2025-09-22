@@ -19,16 +19,20 @@ charing_station_route = APIRouter(tags=["Charing Stations"])
 async def create_charing_station(charing: CharingStationCreate):
     try:
         resp = await charing_stations.insert_one(charing.dict())
+
         if resp.inserted_id:
-            createdRole = await charing_stations.find_by_id(
+            createdCharging = await charing_stations.find_by_id(
                 charing_stations.to_object_id(str(resp.inserted_id))
             )
-        return SuccessResponse(msg="OK").send(data=charing_stations.serialize(createdRole))
+
+        return SuccessResponse(msg="OK").send(
+            data=charing_stations.serialize(createdCharging)
+        )
     except Exception as E:
         return InternalServerError(msg=str(E))
 
 
-@charing_station_route.put("/update/{role_id}", response_model=CharingStationInDB)
+@charing_station_route.put("/update/{charing_id}", response_model=CharingStationInDB)
 async def update_charing_station(charing_id: str, charing: CharingStationCreate):
     try:
         req_body = charing.dict()
@@ -37,7 +41,9 @@ async def update_charing_station(charing_id: str, charing: CharingStationCreate)
         if not data:
             return BadRequestError(msg="Role Not Found").send()
 
-        resp = await charing_stations.update_one({"_id": charing_stations.to_object_id(charing_id)}, req_body)
+        resp = await charing_stations.update_one(
+            {"_id": charing_stations.to_object_id(charing_id)}, req_body
+        )
         if resp.modified_count == 0:
             return BadRequestError(msg="Invalid request").send()
 
@@ -61,7 +67,6 @@ async def list_charing_stations():
         return SuccessResponse(msg="OK").send(data=roleList)
     except Exception as E:
         return InternalServerError(msg=str(E))
-
 
 
 @charing_station_route.get("/detail/{role_id}", response_model=CharingStationInDB)
