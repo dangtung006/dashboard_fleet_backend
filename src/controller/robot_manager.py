@@ -9,7 +9,6 @@ class RobotManager:
     def __init__(self):
         self.robot_connections: dict[str, ESAROBOT] = {}
         self.robots: dict = {}
-        self.robot_connections = {}
 
     async def init_connections_from_config(self):
 
@@ -26,6 +25,7 @@ class RobotManager:
 
             self.robot_connections[robot_id] = ESAROBOT(robot_id, ip)
             await self.robot_connections[robot_id].connect_all()
+
             threading.Thread(target=self.run_async_from_thread).start()
 
     def get_conn(self, robot_id, port_name):
@@ -34,7 +34,7 @@ class RobotManager:
     def run_async_from_thread(self, robot_id):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        loop.run_until_complete(self.robot_connections[robot_id].poll_status_interval())
+        loop.run_until_complete(self.robot_connections[robot_id].get_status_interval())
         loop.close()
 
     async def connect_robot(self, robot_id: str):
