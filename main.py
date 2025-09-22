@@ -27,7 +27,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-APP_HOST = "192.168.68.103"
+APP_HOST = "192.168.192.10"
 APP_PORT = 3000
 
 
@@ -35,11 +35,12 @@ APP_PORT = 3000
 @app.on_event("startup")
 async def startup_event():
     await initAcc()
-    await robot_manager.init_from_config()
+    await robot_manager.init_connections_from_config()
+
     # def run_async_from_thread():
     #     loop = asyncio.new_event_loop()
     #     asyncio.set_event_loop(loop)
-    #     loop.run_until_complete(listen_task(http_client))
+    #     loop.run_until_complete(listen_task())
     #     loop.close()
 
     # t = threading.Thread(target=run_async_from_thread)
@@ -61,8 +62,8 @@ async def run_server():
 
 async def main():
     init_app_routes(app=app, host=APP_HOST, port=APP_PORT)
-    await asyncio.gather(run_server())
-    # await asyncio.gather(run_server(), listen_task())
+    # await asyncio.gather(run_server())
+    await asyncio.gather(run_server(), listen_task())
 
 
 if __name__ == "__main__":

@@ -1,103 +1,116 @@
 import socket, asyncio, errno, time
 from src.extension.db import robots
+import asyncio
+import struct
+import json
+from src.robot.conf import status, navigation, other, config, control
+import threading
 
-ROBOTS = [
-    {
-        "id": "robot_001",
-        "ip": "127.0.0.1",
-        "ports": {"STATUS": 19204, "CTRL": 19205, "NAV": 19206},
-    },
-    {
-        "id": "robot_002",
-        "ip": "127.0.0.1",
-        "ports": {"STATUS": 19304, "CTRL": 19305, "NAV": 19306},
-    },
-]
+PACK_FMT_STR = "!BBHLH6s"
+HEADER_SIZE = struct.calcsize(PACK_FMT_STR)
+REQ_ID = 1
 
 
-class SocketConnection:
-    def __init__(self, name: str, ip: str, port: int):
-        self.name = name
-        self.ip = ip
-        self.port = port
-        self.sock = None
-        self.connected = False
-
-    async def connect(self):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.setblocking(False)
-        try:
-            await asyncio.get_running_loop().sock_connect(
-                self.sock, (self.ip, self.port)
-            )
-            self.connected = True
-            print(f"[{self.name}] Connected to robot at {self.ip}:{self.port}")
-        except Exception as e:
-            self.connected = False
-            print(f"[{self.name}] Connection failed: {e}")
+class API_GROUP:
+    navigation = "nav"
+    status = "status"
+    control = "ctrl"
+    conf = "conf"
+    other = "other"
 
 
-class SocketConnection:
-    ...
-
-    def is_socket_valid(self) -> bool:
-        return self.sock is not None and self.sock.fileno() != -1
-
-    async def safe_send(self, data: str):
-        if not self.is_socket_valid():
-            print(f"[{self.name}] Invalid socket, reconnecting...")
-            await self.connect()
-        try:
-            await asyncio.get_running_loop().sock_sendall(self.sock, data.encode())
-        except (OSError, ConnectionResetError) as e:
-            print(f"[{self.name}] Send error: {e}, reconnecting...")
-            self.connected = False
-            self.sock.close()
-            await self.connect()
-
-    async def safe_recv(self, nbytes: int = 1024) -> str:
-        if not self.is_socket_valid():
-            print(f"[{self.name}] Invalid socket, reconnecting...")
-            await self.connect()
-        try:
-            data = await asyncio.get_running_loop().sock_recv(self.sock, nbytes)
-            return data.decode()
-        except (OSError, ConnectionResetError) as e:
-            print(f"[{self.name}] Receive error: {e}, reconnecting...")
-            self.connected = False
-            self.sock.close()
-            await self.connect()
-            return ""
+class ROBOT_RESPONSE:
+    success = 0
+    request_err = 1
+    resp_time_out = 2
+    read_pack_err = 3
+    unknown_reason = 4
 
 
-class SocketConnection:
-    def __init__(self, robot_id: str, name: str, ip: str, port: int):
-        self.robot_id = robot_id
-        self.name = name
-        self.ip = ip
-        self.port = port
-        self.sock = None
-        self.connected = False
+# class SocketConnection:
+#     def __init__(self, name: str, ip: str, port: int):
+#         self.name = name
+#         self.ip = ip
+#         self.port = port
+#         self.sock = None
+#         self.connected = False
 
-    async def connect(self):
-        try:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.setblocking(False)
-            await asyncio.get_running_loop().sock_connect(
-                self.sock, (self.ip, self.port)
-            )
-            self.connected = True
-            print(f"[{self.robot_id} - {self.name}] ✅ Connected")
-        except Exception as e:
-            self.connected = False
-            print(f"[{self.robot_id} - {self.name}] ❌ Connect failed: {e}")
+#     async def connect(self):
+#         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#         self.sock.setblocking(False)
+#         try:
+#             await asyncio.get_running_loop().sock_connect(
+#                 self.sock, (self.ip, self.port)
+#             )
+#             self.connected = True
+#             print(f"[{self.name}] Connected to robot at {self.ip}:{self.port}")
+#         except Exception as e:
+#             self.connected = False
+#             print(f"[{self.name}] Connection failed: {e}")
 
-    def is_alive(self):
-        return self.sock and self.sock.fileno() != -1
+
+# class SocketConnection:
+#     ...
+
+#     def is_socket_valid(self) -> bool:
+#         return self.sock is not None and self.sock.fileno() != -1
+
+#     async def safe_send(self, data: str):
+#         if not self.is_socket_valid():
+#             print(f"[{self.name}] Invalid socket, reconnecting...")
+#             await self.connect()
+#         try:
+#             await asyncio.get_running_loop().sock_sendall(self.sock, data.encode())
+#         except (OSError, ConnectionResetError) as e:
+#             print(f"[{self.name}] Send error: {e}, reconnecting...")
+#             self.connected = False
+#             self.sock.close()
+#             await self.connect()
+
+#     async def safe_recv(self, nbytes: int = 1024) -> str:
+#         if not self.is_socket_valid():
+#             print(f"[{self.name}] Invalid socket, reconnecting...")
+#             await self.connect()
+#         try:
+#             data = await asyncio.get_running_loop().sock_recv(self.sock, nbytes)
+#             return data.decode()
+#         except (OSError, ConnectionResetError) as e:
+#             print(f"[{self.name}] Receive error: {e}, reconnecting...")
+#             self.connected = False
+#             self.sock.close()
+#             await self.connect()
+#             return ""
+
+
+# class SocketConnection:
+#     def __init__(self, robot_id: str, name: str, ip: str, port: int):
+#         self.robot_id = robot_id
+#         self.name = name
+#         self.ip = ip
+#         self.port = port
+#         self.sock = None
+#         self.connected = False
+
+#     async def connect(self):
+#         try:
+#             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#             self.sock.setblocking(False)
+#             await asyncio.get_running_loop().sock_connect(
+#                 self.sock, (self.ip, self.port)
+#             )
+#             self.connected = True
+#             print(f"[{self.robot_id} - {self.name}] ✅ Connected")
+#         except Exception as e:
+#             self.connected = False
+#             print(f"[{self.robot_id} - {self.name}] ❌ Connect failed: {e}")
+
+#     def is_alive(self):
+#         return self.sock and self.sock.fileno() != -1
 
 
 class SocketConnection:
     def __init__(self, ip: str, port: int, name: str, retry_interval: float = 5.0):
+
         self.ip = ip
         self.port = port
         self.name = name
@@ -105,17 +118,23 @@ class SocketConnection:
         self.sock = None
         self.connected = False
         self.lock = asyncio.Lock()
+        self.conn = None
 
     async def connect(self):
         while not self.connected:
             try:
-                self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.sock.setblocking(False)
-                await asyncio.get_running_loop().sock_connect(
-                    self.sock, (self.ip, self.port)
-                )
+                # self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                # self.sock.setblocking(False)
+                # conn = await asyncio.get_running_loop().sock_connect(
+                #     self.sock, (self.ip, self.port)
+                # )
+
+                reader, writer = await asyncio.open_connection(self.ip, self.port)
                 self.connected = True
                 print(f"[{self.name}] Connected to {self.ip}:{self.port}")
+                self.conn = (reader, writer)
+                # return (reader, writer)
+                # self.connections[key] = (reader, writer)
             except Exception as e:
                 print(
                     f"[{self.name}] Failed to connect: {e}. Retrying in {self.retry_interval}s"
@@ -150,8 +169,10 @@ class SocketConnection:
 class RobotSession:
 
     def __init__(self, robot_id: str, ip: str):
+
         self.robot_id = robot_id
         self.ip = ip
+
         self.connections = {
             "STATUS": SocketConnection(ip, 19204, f"{robot_id}-STATUS"),
             "CTRL": SocketConnection(ip, 19205, f"{robot_id}-CTRL"),
@@ -159,12 +180,100 @@ class RobotSession:
             "CONF": SocketConnection(ip, 19207, f"{robot_id}-CONF"),
             "OTHER": SocketConnection(ip, 19210, f"{robot_id}-OTHER"),
         }
+        self.status = {}
 
     async def connect_all(self):
         await asyncio.gather(*(conn.connect() for conn in self.connections.values()))
 
+    async def poll_status_interval(self):
+
+        while self.connections["STATUS"].connected:
+            poll_status = await self.send_request(
+                "status",
+                REQ_ID,
+                1100,
+                {
+                    "keys": [
+                        "battery_level",
+                        "current_map",
+                        "confidence",
+                        "x",
+                        "y",
+                        "angle",
+                        "current_station",
+                    ],
+                    "return_laser": False,
+                    "return_beams3D": False,
+                },
+            )
+            print("poll_status::::", poll_status)
+            self.status = poll_status
+            await asyncio.sleep(1)
+
     def get(self, name: str) -> SocketConnection:
         return self.connections[name]
+
+    def build_packet(self, req_id, msg_type, msg):
+        json_str = json.dumps(msg)
+        msg_len = len(json_str.encode("utf-8"))
+        header = struct.pack(
+            PACK_FMT_STR, 0x5A, 0x01, req_id, msg_len, msg_type, b"\x00" * 6
+        )
+        return header + json_str.encode("utf-8")
+
+    def unpack_header(self, data):
+        return struct.unpack(PACK_FMT_STR, data)
+
+    async def send_request(self, key, req_id, msg_type, msg, timeout=5):
+        # reader, writer = await self.ensure_connection(key)
+        reader, writer = self.connections["STATUS"].conn
+        if not reader or not writer:
+            # return None
+            return ROBOT_RESPONSE.unknown_reason
+
+        packet = self.build_packet(req_id, msg_type, msg)
+
+        try:
+            writer.write(packet)
+            await writer.drain()
+        except (ConnectionResetError, BrokenPipeError, OSError) as e:
+            print(
+                f"[{key}]- action_type: {msg_type}🔌 Send failed: {e}. Reconnecting..."
+            )
+            # await self.connect(key)
+            return await self.send_request(key, req_id, msg_type, msg, timeout)
+
+        try:
+            header = await asyncio.wait_for(reader.readexactly(HEADER_SIZE), timeout)
+            m_sync, m_ver, m_serial, m_length, m_type, m_reserved = self.unpack_header(
+                header
+            )
+
+            if m_length > 0:
+                payload = await asyncio.wait_for(reader.readexactly(m_length), timeout)
+                response = json.loads(payload.decode("utf-8"))
+                # if key in self.port_callbacks:
+                #     await self.port_callbacks[key](
+                #         action=key, type=msg_type, response=response
+                #     )
+                return response
+                # return ROBOT_RESPONSE.success
+            return ROBOT_RESPONSE.unknown_reason
+            # return None
+
+        except asyncio.TimeoutError:
+            print(f"[{key}] ⏱ Timeout waiting for response")
+            # return None
+            return ROBOT_RESPONSE.resp_time_out
+        except asyncio.IncompleteReadError:
+            print(f"[{key}] 🔌 Connection closed during read")
+            # await self.connect(key)
+            # return None
+            return ROBOT_RESPONSE.read_pack_err
+        except Exception as e:
+            print(f"[{key}] ❌ Read error: {e}")
+            return ROBOT_RESPONSE.unknown_reason
+            # return None
 
 
 class RobotManager:
@@ -172,39 +281,33 @@ class RobotManager:
     def __init__(self):
         self.robot_connections: dict[str, RobotSession] = {}
         self.robots: dict = {}
+        self.robot_connections = {}
 
-    async def init_from_config(self):
+    async def init_connections_from_config(self):
+
         resp = await robots.find_all()
-        print("Loading robot configurations from DB...", resp)
-        # robot_configs = []
 
         async for doc in resp:
             self.robots[str(doc["_id"])] = robots.serialize(doc)
-        print("Initialized RobotManager with robots:", self.robots)
-        # doc["_id"] = str(doc["_id"])
-        # doc["created_at"] = doc["created_at"].isoformat()
-        # doc["updated_at"] = doc["updated_at"].isoformat()
-        # robot_configs.append(robots.serialize(doc))
-        # print("Initializing RobotManager with configs from DB...", robot_configs)
-        # self.robots = robots.serialize(robot_configs)
 
-        # async for config in robot_configs:
-        #     robot_id = config["id"]
-        #     ip = config["ip"]
-        #     self.robot_connections[robot_id] = RobotSession(robot_id, ip)
+        for id in self.robots:
 
-        # await self.robots[robot_id].connect_all()
+            robot_info = self.robots[id]
+            robot_id = robot_info["_id"]
+            ip = robot_info["robot_ip"]
 
-        # for r in config:
-        #     conns = {}
-        #     for name, port in r["ports"].items():
-        #         conn = SocketConnection(r["id"], name, r["ip"], port)
-        #         await conn.connect()
-        #         conns[name] = conn
-        #     self.robots[r["id"]] = conns
+            self.robot_connections[robot_id] = RobotSession(robot_id, ip)
+            await self.robot_connections[robot_id].connect_all()
+            threading.Thread(target=self.run_async_from_thread).start()
 
-    # def get_conn(self, robot_id, port_name):
-    #     return self.robots[robot_id][port_name]
+    def get_conn(self, robot_id, port_name):
+        return self.robot_connections[robot_id][port_name]
+
+    def run_async_from_thread(self, robot_id):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self.robot_connections[robot_id].poll_status_interval())
+        loop.close()
 
     async def connect_robot(self, robot_id: str):
         robot = self.robots.get(robot_id)
