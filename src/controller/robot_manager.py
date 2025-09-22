@@ -23,10 +23,14 @@ class RobotManager:
             robot_id = robot_info["_id"]
             ip = robot_info["robot_ip"]
 
-            self.robot_connections[robot_id] = ESAROBOT(robot_id, ip)
+            print("robot_id:::", robot_id)
+            print("ip:::", ip)
+            self.robot_connections[robot_id] = ESAROBOT(robot_id, ip, env="production")
             await self.robot_connections[robot_id].connect_all()
 
-            threading.Thread(target=self.run_async_from_thread).start()
+            threading.Thread(
+                target=self.run_async_from_thread, args=(robot_id,)
+            ).start()
 
     def get_conn(self, robot_id, port_name):
         return self.robot_connections[robot_id][port_name]

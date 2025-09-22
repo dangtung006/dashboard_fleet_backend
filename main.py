@@ -62,8 +62,8 @@ async def run_server():
 
 async def main():
     init_app_routes(app=app, host=APP_HOST, port=APP_PORT)
-    # await asyncio.gather(run_server())
-    await asyncio.gather(run_server(), listen_task())
+    await asyncio.gather(run_server())
+    # await asyncio.gather(run_server(), listen_task())
 
 
 if __name__ == "__main__":

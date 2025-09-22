@@ -156,13 +156,13 @@ class ESA_ROBOT_API:
         }
 
     ################################################### Status APi ###################################################
-    async def get_status(self, jsonstring: dict, retry: int = 0):
+    async def get_status(self, retry: int = 0):
         try:
-            resp = await self.connections["STATUS"].send_request(
-                key="nav",
+            resp = await self.connections[API_GROUP.status].send_request(
+                key=API_GROUP.status,
                 req_id=REQ_ID,
                 msg_type=status.robot_status_all1_req,
-                msg=jsonstring,
+                msg=self.keys,
             )
             return resp
         except Exception as E:
@@ -396,6 +396,9 @@ class ESAROBOT(ESA_ROBOT_API):
     async def get_status_interval(self):
 
         status_conn = self._getConnectionByName(API_GROUP.status)
+        # asyncio.to_thread()
 
         while status_conn.connected:
+            poll_status = await self.get_status()
+            self.status = poll_status
             await asyncio.sleep(1)
