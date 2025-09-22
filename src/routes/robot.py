@@ -57,6 +57,12 @@ async def update(id: str, robot: Robot):
     )
 
 
+@robot_route.get("/status/{id}")
+async def get_status(id: str):
+    resp = robot_manager.get_robot_status_by_id(id)
+    return SuccessResponse(msg="OK").send(data=resp)
+
+
 @robot_route.delete("/delete/{id}")
 async def remove_robot(id: str):
     resp = await robot_manager.remove_robot(id)

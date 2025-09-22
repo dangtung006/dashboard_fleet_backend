@@ -123,5 +123,8 @@ class RobotManager:
     def get_robot_by_id(self, robot_id: str):
         return self.robots.get(robot_id, None)
 
+    def get_robot_status_by_id(self, robot_id: str):
+        return self.robot_connections.get(robot_id, None).status
+
     # async def connect_all(self):
     #     await asyncio.gather(*(robot.connect_all() for robot in self.robots.values()))

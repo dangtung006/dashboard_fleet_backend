@@ -395,7 +395,7 @@ class ESAROBOT(ESA_ROBOT_API):
 
     async def get_status_interval(self):
 
-        load_status_conn = self._getConnectionByName(API_GROUP.status)
+        status_conn = self._getConnectionByName(API_GROUP.status)
 
-        while load_status_conn.connected:
+        while status_conn.connected:
             await asyncio.sleep(1)
