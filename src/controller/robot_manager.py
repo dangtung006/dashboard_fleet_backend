@@ -22,27 +22,14 @@ class RobotManager:
             robot_info = self.robots[id]
             robot_id = robot_info["_id"]
             ip = robot_info["robot_ip"]
-
-            print("robot_id:::", robot_id)
-            print("ip:::", ip)
             self.robot_connections[robot_id] = ESAROBOT(robot_id, ip, env="production")
             await self.robot_connections[robot_id].connect_all()
-
-            threading.Thread(
-                target=self.run_async_from_thread, args=(robot_id,)
-            ).start()
 
     def get_conn(self, robot_id, port_name):
         return self.robot_connections[robot_id][port_name]
 
-    def run_async_from_thread(self, robot_id):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(self.robot_connections[robot_id].get_status_interval())
-        loop.close()
-
     async def connect_robot(self, robot_id: str):
-        robot = self.robots.get(robot_id)
+        robot: ESAROBOT = self.robots.get(robot_id)
         if robot:
             await robot.connect_all()
         else:
@@ -59,6 +46,7 @@ class RobotManager:
         # except Exception as e:
         #     print(f"Error serializing data: {e}")
         #     return
+
         robot_id = data["id"]
         if robot_id in self.robots:
             await robots.update_one({"id": robot_id}, {"$set": data})
@@ -118,7 +106,16 @@ class RobotManager:
         #     del self.robots[robot_id]
 
     def get_all_robots(self):
-        return list(self.robots.values())
+
+        robot_info = list(self.robots.values())
+        robot_data = []
+
+        for robot in robot_info:
+            robot_id = robot["_id"]
+            if robot_id in self.robot_connections:
+                robot_conn = self.robot_connections[robot_id]
+                robot_data.append({**robot, **robot_conn.status})
+        return robot_data
         # for conn in self.robot_connections.values():
         #     print(conn.robot_id, conn.ip)
 

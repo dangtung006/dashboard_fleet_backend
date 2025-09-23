@@ -1,7 +1,7 @@
 import asyncio
 import struct
 import json
-
+import threading
 from src.robot.conf import status, navigation, other, config, control
 from src.robot.const.key_store import get_frame_keys
 
@@ -61,17 +61,42 @@ class RobotSocketConnection:
         self.conn = None
 
     async def connect(self):
-        while not self.connected:
-            try:
-                reader, writer = await asyncio.open_connection(self.ip, self.port)
-                self.connected = True
-                print(f"[{self.name}] Connected to {self.ip}:{self.port}")
-                self.conn = (reader, writer)
-            except Exception as e:
-                print(
-                    f"[{self.name}] Failed to connect: {e}. Retrying in {self.retry_interval}s"
-                )
-                await asyncio.sleep(self.retry_interval)
+
+        # while not self.connected:
+        #     try:
+        #         reader, writer = await asyncio.open_connection(self.ip, self.port)
+        #         # asyncio.timeout(3)
+        #         self.connected = True
+        #         print(f"[{self.name}] Connected to {self.ip}:{self.port}")
+        #         self.conn = (reader, writer)
+        #     except Exception as e:
+        #         print(
+        #             f"[{self.name}] Failed to connect: {e}. Retrying in {self.retry_interval}s"
+        #         )
+        #         # await asyncio.sleep(self.retry_interval)
+
+        try:
+            reader, writer = await asyncio.wait_for(
+                asyncio.open_connection(self.ip, self.port), timeout=3
+            )
+            print(f"✅ Kết nối thành công {self.ip}:{self.port}")
+            self.connected = True
+            # return reader, writer
+            self.conn = (reader, writer)
+        except asyncio.TimeoutError:
+            print(f"⏳ Timeout sau {3}s, huỷ kết nối tới robot {self.ip}- {self.name}")
+            # await self.close_conn()
+            # return None, None
+        except Exception as e:
+            print(f"❌ Lỗi khi kết nối: {e}")
+            # await self.close_conn()
+            # return None, None
+
+    async def close_conn(self):
+        reader, writer = self.conn
+        if writer:
+            writer.close()
+            await writer.wait_closed()
 
     def build_packet(self, req_id, msg_type, msg):
         json_str = json.dumps(msg)
@@ -386,19 +411,38 @@ class ESAROBOT(ESA_ROBOT_API):
 
         super().__init__(ip=ip, id=robot_id, keys=get_frame_keys(KEY_CONF), env=env)
         self.status = {}
+        self._task = None
 
     def _getConnectionByName(self, name: str) -> RobotSocketConnection:
         return self.connections[name]
 
     async def connect_all(self):
+
         await asyncio.gather(*(conn.connect() for conn in self.connections.values()))
+        status_conn = self._getConnectionByName(API_GROUP.status)
+
+        if status_conn.connected:
+            self._task = asyncio.create_task(self.get_status_interval())
+        # if status_conn.connected:
+        # threading.Thread(target=self.run_async_from_thread, args=(self.id,)).start()
+
+    def stop_task(self):
+        if self._task:
+            self._task.cancel()
+            self._task = None
 
     async def get_status_interval(self):
 
         status_conn = self._getConnectionByName(API_GROUP.status)
-        # asyncio.to_thread()
 
         while status_conn.connected:
             poll_status = await self.get_status()
+            print("poll_status:::::", poll_status)
             self.status = poll_status
-            await asyncio.sleep(1)
+            await asyncio.sleep(1.5)
+
+    # def run_async_from_thread(self, robot_id):
+    #     loop = asyncio.new_event_loop()
+    #     asyncio.set_event_loop(loop)
+    #     loop.run_until_complete(self.get_status_interval())
+    #     loop.close()
