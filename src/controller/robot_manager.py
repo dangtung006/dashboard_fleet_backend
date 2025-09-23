@@ -122,15 +122,21 @@ class RobotManager:
         # return self.robots
 
     def get_robot_by_id(self, robot_id: str):
-        return self.robots.get(robot_id, None)
+        robot = self.robots.get(robot_id, None)
+        if robot_id in self.robot_connections:
+            status = self.robot_connections[robot_id].status
+            robot = {**robot, **status} if robot else robot
+        return robot
 
-    async def ctrl_joystick(self, cmd, robot_id):
+    async def ctrl_joystick(self, cmd):
         type = cmd["type"]
         direction = cmd["direction"]
+        robot_id = cmd["robot_id"]
         distance = cmd["distance"]
 
         robot_conn: ESAROBOT = self.robot_connections[robot_id]
-
+        if not robot_conn:
+            return False
         vx = (
             0.1
             if direction == "FORWARD"

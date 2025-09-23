@@ -21,7 +21,9 @@ KEY_CONF = [
     "current_station",
     "vx",
     "vy",
+    "w",
     "battery_level",
+    "battery_temp",
     "charging",
     "task_status",
     "target_id",
@@ -461,8 +463,8 @@ class ESAROBOT(ESA_ROBOT_API):
 
         while status_conn.connected:
             poll_status = await self.get_status()
-            # print("poll_status:::::", poll_status)
-            self.status = poll_status
+            self.status["connected"] = status_conn.connected
+            self.status = {**self.status, **poll_status}
             await asyncio.sleep(1.5)
 
     # def run_async_from_thread(self, robot_id):
