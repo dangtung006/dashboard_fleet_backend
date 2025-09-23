@@ -20,3 +20,19 @@ async def get_robot_status(ws: WebSocket):
             print(str(Err))
         except RuntimeError:
             break
+
+
+@ws_router.websocket("/joystick")
+async def get_robot_status(ws: WebSocket):
+    await ws.accept()
+
+    while True:
+        try:
+            cmd = await ws.receive_json()
+            await robot_manager.ctrl_joystick(cmd, "68ba97b0530bf52840ff422c")
+        except WebSocketDisconnect as Err:
+            pass
+        except WebSocketException as Err:
+            print(str(Err))
+        except RuntimeError:
+            break

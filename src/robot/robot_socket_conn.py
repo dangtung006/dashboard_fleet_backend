@@ -292,6 +292,30 @@ class ESA_ROBOT_API:
         except Exception as E:
             return False
 
+    async def open_loop_ctrl(self, jsonstring: dict, retry: int = 0):
+        try:
+            resp = await self.connections[API_GROUP.control].send_request(
+                key=API_GROUP.control,
+                req_id=REQ_ID,
+                msg_type=control.robot_control_motion_req,
+                msg=jsonstring,
+            )
+            return resp
+        except Exception as E:
+            return False
+
+    async def stop_loop_ctrl(self, jsonstring: dict, retry: int = 0):
+        try:
+            resp = await self.connections[API_GROUP.control].send_request(
+                key=API_GROUP.control,
+                req_id=REQ_ID,
+                msg_type=control.robot_control_stop_req,
+                msg=jsonstring,
+            )
+            return resp
+        except Exception as E:
+            return False
+
     ################################################### Config APi ###################################################
 
     async def device_set_shelf(self, jsonstring: dict, retry: int = 0):
@@ -437,7 +461,7 @@ class ESAROBOT(ESA_ROBOT_API):
 
         while status_conn.connected:
             poll_status = await self.get_status()
-            print("poll_status:::::", poll_status)
+            # print("poll_status:::::", poll_status)
             self.status = poll_status
             await asyncio.sleep(1.5)
 

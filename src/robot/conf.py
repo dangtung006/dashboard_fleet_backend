@@ -43,7 +43,7 @@ class control:
     robot_control_reloc_req = 2002  # Relocation
     robot_control_comfirmloc_req = 2003  # Confirm location correct
     robot_control_cancelreloc_req = 2004  # Cancel relocation
-    robot_control_motion_req = 2015  # Open Loop motion
+    robot_control_motion_req = 2010  # Open Loop motion ## 2010
     robot_control_loadmap_req = 2022  # Switch map
 
 

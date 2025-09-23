@@ -70,9 +70,18 @@ async def remove_robot(id: str):
 
 
 @robot_route.post("/control/joystick")
-async def add(motion: Robot):
-    pass
+async def move():
+    resp = await robot_manager.ctrl_joystick(
+        cmd={}, robot_id="68ba97b0530bf52840ff422c"
+    )
     # resp = await robot_manager.add_robot(robot.dict())
-    # return SuccessResponse(msg="OK").send(
-    #     data=resp if resp else NotFoundError(msg="Robot not found").send()
-    # )
+    return SuccessResponse(msg="OK").send(data=True)
+
+
+@robot_route.post("/control/joystick/stop")
+async def stop_move():
+    resp = await robot_manager.stop_ctrl_joystick(
+        cmd={}, robot_id="68ba97b0530bf52840ff422c"
+    )
+    # resp = await robot_manager.add_robot(robot.dict())
+    return SuccessResponse(msg="OK").send(data=resp)

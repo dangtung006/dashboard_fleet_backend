@@ -124,6 +124,45 @@ class RobotManager:
     def get_robot_by_id(self, robot_id: str):
         return self.robots.get(robot_id, None)
 
+    async def ctrl_joystick(self, cmd, robot_id):
+        type = cmd["type"]
+        direction = cmd["direction"]
+        distance = cmd["distance"]
+
+        robot_conn: ESAROBOT = self.robot_connections[robot_id]
+
+        vx = (
+            0.1
+            if direction == "FORWARD"
+            else 0 if direction == "LEFT" or direction == "RIGHT" else -0.1
+        )
+
+        w = (
+            0.1
+            if direction == "RIGHT"
+            else 0 if direction == "FORWARD" or direction == "BACKWARD" else -0.1
+        )
+
+        orderByCmd = {
+            "vx": vx,
+            "vy": 0,
+            "w": w,
+            "duration": 0,
+        }
+
+        if type == "move":
+            resp = await robot_conn.open_loop_ctrl(jsonstring=orderByCmd)
+            return resp
+
+        elif type == "stop":
+            resp = await robot_conn.stop_loop_ctrl(jsonstring={})
+            return resp
+
+    async def stop_ctrl_joystick(self, robot_id):
+        robot_conn: ESAROBOT = self.robot_connections[robot_id]
+        resp = await robot_conn.stop_loop_ctrl(jsonstring={})
+        return resp
+
     def get_robot_status_by_id(self, robot_id: str):
         return self.robot_connections.get(robot_id, None).status
 
