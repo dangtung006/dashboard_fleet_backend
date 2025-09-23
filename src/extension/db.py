@@ -129,6 +129,29 @@ class ROBOTS(DB_HELPER):
         super().__init__()
         self.init_collection(self.db["robots"])
 
+    async def get_robot_with_map(self, robot_id):
+        try:
+            user = await self.collection.aggregate(
+                [
+                    {"$match": {"_id": ObjectId(robot_id)}},
+                    {
+                        "$lookup": {
+                            "from": "robot_maps",  # collection robot_maps
+                            "localField": "robot_map",  # field trong robots
+                            "foreignField": "_id",  # field trong robot_maps
+                            "as": "current_map",  # output alias
+                        }
+                    },
+                    {"$unwind": "$current_map"},  # lấy object thay vì mảng
+                ]
+            ).to_list(1)
+
+            return user[0]
+
+        except Exception as E:
+            print(str(E))
+            return False
+
 
 class CALLERS(DB_HELPER):
     def __init__(self):
@@ -201,6 +224,7 @@ class ROBOT_MAPS(DB_HELPER):
     def __init__(self):
         super().__init__()
         self.init_collection(self.db["robot_maps"])
+
 
 class CHARING_STATIONS(DB_HELPER):
     def __init__(self):

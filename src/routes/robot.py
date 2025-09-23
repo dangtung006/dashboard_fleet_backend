@@ -1,8 +1,9 @@
 from fastapi import APIRouter
-from src.extension.db import robots
+from src.extension.db import robots, robot_maps
 from src.dto.robot import Robot
 from src.app.app_init import robot_manager
 from src.helper.response import BadRequestError, NotFoundError, SuccessResponse
+from bson import ObjectId
 
 
 robot_route = APIRouter(tags=["Robot List"])
@@ -35,6 +36,15 @@ async def get_station_list():
     return robot_list
 
 
+@robot_route.get("/with_map/{id}")
+async def get_robot_with_map(id: str):
+    resp = await robots.get_robot_with_map(robot_id=id)
+    resp = robots.serialize(resp)
+    current_map = resp["current_map"]
+
+    return SuccessResponse(msg="OK").send(data=current_map)
+
+
 @robot_route.get("/count_robots")
 async def count_stations():
     resp = await robots.count_by_conditions({})
@@ -43,7 +53,11 @@ async def count_stations():
 
 @robot_route.post("/add")
 async def add(robot: Robot):
-    resp = await robot_manager.add_robot(robot.dict())
+    req_body = robot.dict()
+    robot_map = req_body["robot_map"]
+    if robot_map:
+        req_body = {**req_body, "robot_map": robots.to_object_id(robot_map)}
+    resp = await robot_manager.add_robot(req_body)
     return SuccessResponse(msg="OK").send(
         data=resp if resp else NotFoundError(msg="Robot not found").send()
     )
