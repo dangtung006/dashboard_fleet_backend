@@ -198,8 +198,8 @@ class ESA_ROBOT_API:
     ################################################### Navigation APi ###################################################
     async def navigate(self, jsonstring: dict, retry: int = 0):
         try:
-            resp = await self.connections[API_GROUP.status].send_request(
-                key=API_GROUP.status,
+            resp = await self.connections[API_GROUP.navigation].send_request(
+                key=API_GROUP.navigation,
                 req_id=REQ_ID,
                 msg_type=navigation.robot_task_gotarget_req,
                 msg=jsonstring,
@@ -210,8 +210,8 @@ class ESA_ROBOT_API:
 
     async def pause_navigation(self, jsonstring: dict, retry: int = 0):
         try:
-            resp = await self.connections[API_GROUP.status].send_request(
-                key=API_GROUP.status,
+            resp = await self.connections[API_GROUP.navigation].send_request(
+                key=API_GROUP.navigation,
                 req_id=REQ_ID,
                 msg_type=navigation.robot_task_pause_req,
                 msg=jsonstring,
@@ -222,8 +222,8 @@ class ESA_ROBOT_API:
 
     async def resume_navigation(self, jsonstring: dict, retry: int = 0):
         try:
-            resp = await self.connections[API_GROUP.status].send_request(
-                key=API_GROUP.status,
+            resp = await self.connections[API_GROUP.navigation].send_request(
+                key=API_GROUP.navigation,
                 req_id=REQ_ID,
                 msg_type=navigation.robot_task_resume_req,
                 msg=jsonstring,
@@ -234,8 +234,8 @@ class ESA_ROBOT_API:
 
     async def cancel_navigation(self, jsonstring: dict, retry: int = 0):
         try:
-            resp = await self.connections[API_GROUP.status].send_request(
-                key=API_GROUP.status,
+            resp = await self.connections[API_GROUP.navigation].send_request(
+                key=API_GROUP.navigation,
                 req_id=REQ_ID,
                 msg_type=navigation.robot_task_cancel_req,
                 msg=jsonstring,
@@ -246,8 +246,8 @@ class ESA_ROBOT_API:
 
     async def get_navigation_path(self, jsonstring: dict, retry: int = 0):
         try:
-            resp = await self.connections[API_GROUP.status].send_request(
-                key=API_GROUP.status,
+            resp = await self.connections[API_GROUP.navigation].send_request(
+                key=API_GROUP.navigation,
                 req_id=REQ_ID,
                 msg_type=navigation.robot_task_target_path_req,
                 msg=jsonstring,

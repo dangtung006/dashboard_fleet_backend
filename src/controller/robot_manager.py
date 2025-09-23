@@ -164,13 +164,24 @@ class RobotManager:
             resp = await robot_conn.stop_loop_ctrl(jsonstring={})
             return resp
 
-    async def stop_ctrl_joystick(self, robot_id):
+    async def stop_ctrl_joystick(self, cmd):
+        robot_id = cmd["robot_id"]
         robot_conn: ESAROBOT = self.robot_connections[robot_id]
+        if not robot_conn:
+            return
+
         resp = await robot_conn.stop_loop_ctrl(jsonstring={})
+        return resp
+
+    async def go_target(self, robot_id, target):
+        robot_conn: ESAROBOT = self.robot_connections[robot_id]
+        if not robot_conn:
+            return False
+
+        resp = await robot_conn.navigate(
+            jsonstring={"source_id": "SELF_POSITION", "id": target}
+        )
         return resp
 
     def get_robot_status_by_id(self, robot_id: str):
         return self.robot_connections.get(robot_id, None).status
-
-    # async def connect_all(self):
-    #     await asyncio.gather(*(robot.connect_all() for robot in self.robots.values()))

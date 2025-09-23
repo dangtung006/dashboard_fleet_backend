@@ -99,3 +99,12 @@ async def stop_move():
     )
     # resp = await robot_manager.add_robot(robot.dict())
     return SuccessResponse(msg="OK").send(data=resp)
+
+
+@robot_route.post("/control/go_target")
+async def go_target(cmd: dict):
+    print("cmd:::", cmd)
+    target = cmd["name"]
+    robot_id = cmd["robotId"]
+    resp = await robot_manager.go_target(robot_id=robot_id, target=target)
+    return SuccessResponse(msg="OK").send(data=resp)
