@@ -55,7 +55,13 @@ class DB_HELPER:
         return await self.collection.update_one(
             filter=filter, update={"$set": update}, upsert=upsert
         )
-        # self.collection.update_one({}, {"$set": {}}, upsert=True)
+
+    async def update_one_v2(self, filter: dict, update: dict, upsert=False):
+        return await self.collection.update_one(
+            filter=filter, update=update, upsert=upsert
+        )
+
+    # self.collection.update_one({}, {"$set": {}}, upsert=True)
 
     async def update_by_id(self):
         return await self.collection.update_many(filter={}, update={})

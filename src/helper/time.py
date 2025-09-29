@@ -16,3 +16,13 @@ def is_elapsed(start_time, minutes: int) -> bool:
 
     now_ts = time.time()
     return (now_ts - start_ts) >= minutes * 60
+
+
+def seconds_to_hours(seconds: int | float) -> float:
+    return seconds / 3600
+
+
+def format_seconds_to_hm(seconds: int) -> str:
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    return f"{hours}h {minutes}m"

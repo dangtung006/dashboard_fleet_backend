@@ -5,6 +5,7 @@ import threading
 from src.robot.conf import status, navigation, other, config, control
 from src.robot.const.key_store import get_frame_keys
 from src.extension.db import robot_statistics
+from src.helper.time import seconds_to_hours
 import time
 
 
@@ -444,25 +445,17 @@ class ESA_ROBOT_API:
 class ESAROBOT(ESA_ROBOT_API):
 
     def __init__(self, robot_id: str, ip: str, env: str):
-
         super().__init__(ip=ip, id=robot_id, keys=get_frame_keys(KEY_CONF), env=env)
         self.status = {}
         self._task = None
         self.sync_stats = None
-        self.last_sync = 0
+        self.last_sync = time.time()
         self.last_event_sync = "offline"
         self.last_event_sync_time = 0
-
-        # self._init_sync_stats()
-        print("aaaaaaaaaaaaaaaaaaaaaaaaaaa")
+        self.recent_action = {"today_time": 0, "today_odo": 0}
 
     def _getConnectionByName(self, name: str) -> RobotSocketConnection:
         return self.connections[name]
-
-    def _init_sync_stats(self):
-        print("create Task")
-        self.sync_stats = asyncio.create_task(self.sync_statistics_interval())
-        print("self.sync_stats::::", self.sync_stats)
 
     async def connect_all(self):
 
@@ -471,6 +464,25 @@ class ESAROBOT(ESA_ROBOT_API):
 
         if status_conn.connected:
             self._task = asyncio.create_task(self.get_status_interval())
+            robot_stats = await robot_statistics.find_one_by_conditions(
+                {"robot_id": robot_statistics.to_object_id(self.id)}
+            )
+            if not robot_stats:
+                await robot_statistics.insert_one(
+                    {
+                        "robot_id": robot_statistics.to_object_id(self.id),
+                        "date": "2025-09-29",
+                        "runtime_hours": 0,
+                        "distance_traveled": 0,
+                        "error_count": 0,
+                        "status_distribution": {
+                            "running": 0,
+                            "idle": 0,
+                            "charge": 0,
+                        },
+                    }
+                )
+
             self.sync_stats = asyncio.create_task(self.sync_statistics_interval())
 
         # if status_conn.connected:
@@ -493,41 +505,53 @@ class ESAROBOT(ESA_ROBOT_API):
 
     async def sync_statistics_interval(self):
         status_conn = self._getConnectionByName(API_GROUP.status)
-        can_sync_now = True
-        print("status_conn.connectedL", status_conn.connected)
+
         while status_conn.connected:
-            await self.mark_even_to_sync()
-            print("sync")
-            # if not can_sync_now:
-            #     continue
+            # await self.mark_even_to_sync()
+            now = time.time()
+            delt_run_time = now - self.last_sync
 
-            # statistics = robot_statistics.find_by_id(id=self.id)
-            # if not statistics:
-            #     continue
-
-            # robot_stat = robot_statistics.serialize(statistics)
-
-            # keys = ["today_odo", "time"]
-            # poll_status = await self.get_status(keys=keys)
-
-            # await robot_statistics.update_one(
-            #     filter={"_id": self.id},
-            #     update={"runtime_hours": 0, "distance_traveled": 0, "error_count": 0},
-            # )
             await asyncio.sleep(1)
+            if delt_run_time < 30:
+                continue
+
+            statistics = await robot_statistics.find_one_by_conditions(
+                {"robot_id": robot_statistics.to_object_id(self.id)}
+            )
+
+            if not statistics:
+                continue
+
+            poll_status = await self.get_status(
+                get_frame_keys(keys=["odo", "today_odo", "time", "total_time"])
+            )
+
+            self.recent_action = {
+                "today_time": poll_status["time"],
+                "today_odo": poll_status["today_odo"],
+            }
+
+            await robot_statistics.update_one(
+                filter={"robot_id": robot_statistics.to_object_id(self.id)},
+                update={
+                    "runtime_hours": seconds_to_hours(poll_status["total_time"] / 1000),
+                    "distance_traveled": poll_status["odo"],
+                    "error_count": 0,
+                },
+            )
+            self.last_sync = now
+
+        if not status_conn.connected:
+            await asyncio.sleep(60)
+            return self.sync_statistics_interval()
 
     async def mark_even_to_sync(self):
-        status_conn = self._getConnectionByName(API_GROUP.status)
+
         try:
             task_status = self.status.get("task_status", None)
             charging = self.status.get("charging", None)
         except Exception as E:
-            print("key err", E)
             pass
-
-        # if status_conn.connected:
-        #     self.last_event_sync = "online"
-        #     self.last_event_sync_time = time.time()
 
         if charging == True:
             print("sync time charing")
@@ -539,10 +563,24 @@ class ESAROBOT(ESA_ROBOT_API):
         else:
             print("sync time")
 
-            if task_status == 2 or task_status == 3:
+            now = time.time()
 
-                print("running")
-                now = time.time()
+            if self.last_event_sync == "charging":
+                delt_charing = (
+                    self.last_event_sync_time > 0
+                    and now - self.last_event_sync_time
+                    or 0
+                )
+                await robot_statistics.update_one_v2(
+                    {"robot_id": robot_statistics.to_object_id(self.id)},
+                    {
+                        "$inc": {
+                            "status_distribution.charge": seconds_to_hours(delt_charing)
+                        }
+                    },
+                )
+
+            if task_status == 2 or task_status == 3:
                 #### running
                 if self.last_event_sync == "idle":
                     delt = (
@@ -550,19 +588,25 @@ class ESAROBOT(ESA_ROBOT_API):
                         and now - self.last_event_sync_time
                         or 0
                     )
-                    print("del idle", delt)
+
+                    try:
+                        await robot_statistics.update_one_v2(
+                            {"robot_id": robot_statistics.to_object_id(self.id)},
+                            {
+                                "$inc": {
+                                    "status_distribution.idle": seconds_to_hours(delt)
+                                }
+                            },
+                        )
+                    except Exception as E:
+                        print("Err update idle", E)
 
                 #### remark
                 if self.last_event_sync != "running":
-                    print("mark running")
                     self.last_event_sync = "running"
                     self.last_event_sync_time = now
 
             elif task_status == 4 or task_status == 0:
-                now = time.time()
-                # print("now :::", now)
-                print("idle")
-
                 #### task done
                 if self.last_event_sync == "running":
                     now = time.time()
@@ -571,58 +615,32 @@ class ESAROBOT(ESA_ROBOT_API):
                         and now - self.last_event_sync_time
                         or 0
                     )
-                    print("del running", delt)
+                    try:
+                        await robot_statistics.update_one_v2(
+                            {"robot_id": robot_statistics.to_object_id(self.id)},
+                            {
+                                "$inc": {
+                                    "status_distribution.running": seconds_to_hours(
+                                        delt
+                                    )
+                                }
+                            },
+                        )
+                        print("del running", delt, seconds_to_hours(delt))
+                    except Exception as E:
+                        print("Err update running", E)
 
                 #### remark
                 if self.last_event_sync != "idle":
                     print("remar idle")
                     self.last_event_sync = "idle"
                     self.last_event_sync_time = now
-
-                # now = time.time()
-                # self.last_event_sync = "idle"
-                # delt = now - self.last_event_sync_time
-                # self.last_event_sync_time = now
             # else:
             #     ##### idle
             #     now = time.time()
             #     self.last_event_sync = "idle"
             #     delt = now - self.last_event_sync_time
             #     self.last_event_sync_time = now
-
-    def check_robot_event(self):
-        status_conn = self._getConnectionByName(API_GROUP.status)
-        task_status = self.status["task_status"]
-        charging = self.status["charging"]
-
-        # match "":
-        #     case "start":
-        #         print("Starting the system...")
-        #     case "stop":
-        #         print("Stopping the system...")
-        #     case "restart":
-        #         print("Restarting the system...")
-        #     case "status":
-        #         print("Checking system status...")
-        #     case _:  # The wildcard case, similar to 'default' in other languages
-        #         print(f"Unknown command: {charging}")
-
-        if status_conn.connected:
-            if self.last_event_sync == "offline":
-                time_slap = 1000 - self.last_event_sync_time
-        elif charging == True:
-            if self.last_event_sync == "charing":
-                time_slap = 1000 - self.last_event_sync_time
-        else:
-            if task_status == 2:
-                #### running
-                time_slap = 1000 - self.last_event_sync_time
-            elif task_status == 6:
-                #### task done
-                time_slap = 1000 - self.last_event_sync_time
-            else:
-                ##### idle
-                time_slap = 1000 - self.last_event_sync_time
 
     # def run_async_from_thread(self, robot_id):
     #     loop = asyncio.new_event_loop()
