@@ -4,6 +4,7 @@ import json
 import threading
 from src.robot.conf import status, navigation, other, config, control
 from src.robot.const.key_store import get_frame_keys
+from src.extension.db import robot_statistics
 
 PACK_FMT_STR = "!BBHLH6s"
 HEADER_SIZE = struct.calcsize(PACK_FMT_STR)
@@ -183,13 +184,13 @@ class ESA_ROBOT_API:
         }
 
     ################################################### Status APi ###################################################
-    async def get_status(self, retry: int = 0):
+    async def get_status(self, keys, retry: int = 0):
         try:
             resp = await self.connections[API_GROUP.status].send_request(
                 key=API_GROUP.status,
                 req_id=REQ_ID,
                 msg_type=status.robot_status_all1_req,
-                msg=self.keys,
+                msg=keys or self.keys,
             )
             return resp
         except Exception as E:
@@ -438,6 +439,7 @@ class ESAROBOT(ESA_ROBOT_API):
         super().__init__(ip=ip, id=robot_id, keys=get_frame_keys(KEY_CONF), env=env)
         self.status = {}
         self._task = None
+        self.last_sync = 0
 
     def _getConnectionByName(self, name: str) -> RobotSocketConnection:
         return self.connections[name]
@@ -466,6 +468,22 @@ class ESAROBOT(ESA_ROBOT_API):
             self.status["connected"] = status_conn.connected
             self.status = {**self.status, **poll_status}
             await asyncio.sleep(1.5)
+
+    async def sync_statistics_interval(self):
+        status_conn = self._getConnectionByName(API_GROUP.status)
+        can_sync_now = True
+        while status_conn.connected:
+            if not can_sync_now:
+                continue
+            statistics = robot_statistics.find_by_id(id=self.id)
+            if not statistics:
+                continue
+
+            keys = ["today_odo", "time"]
+            poll_status = await self.get_status(keys=keys)
+
+            await robot_statistics.update_one({})
+            await asyncio.sleep(0.5)
 
     # def run_async_from_thread(self, robot_id):
     #     loop = asyncio.new_event_loop()
