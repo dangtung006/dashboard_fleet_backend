@@ -439,10 +439,16 @@ class ESAROBOT(ESA_ROBOT_API):
         super().__init__(ip=ip, id=robot_id, keys=get_frame_keys(KEY_CONF), env=env)
         self.status = {}
         self._task = None
+        self.sync_stats = None
         self.last_sync = 0
+
+        self._init_sync_stats()
 
     def _getConnectionByName(self, name: str) -> RobotSocketConnection:
         return self.connections[name]
+
+    def _init_sync_stats(self):
+        self.sync_stats = asyncio.create_task(self.sync_statistics_interval())
 
     async def connect_all(self):
 
@@ -472,18 +478,48 @@ class ESAROBOT(ESA_ROBOT_API):
     async def sync_statistics_interval(self):
         status_conn = self._getConnectionByName(API_GROUP.status)
         can_sync_now = True
+
         while status_conn.connected:
             if not can_sync_now:
                 continue
+
             statistics = robot_statistics.find_by_id(id=self.id)
             if not statistics:
                 continue
 
+            robot_stat = robot_statistics.serialize(statistics)
+
             keys = ["today_odo", "time"]
             poll_status = await self.get_status(keys=keys)
 
-            await robot_statistics.update_one({})
+            await robot_statistics.update_one(
+                filter={"_id": self.id},
+                update={"runtime_hours": 0, "distance_traveled": 0, "error_count": 0},
+            )
             await asyncio.sleep(0.5)
+
+    def check_robot_event(self):
+        status_conn = self._getConnectionByName(API_GROUP.status)
+        # if not status_conn.connected:
+        #     return False
+
+        task_status = self.status["task_status"]
+        charging = self.status["charging"]
+
+        if status_conn.connected:
+            pass
+        elif charging == True:
+            pass
+        else:
+            if task_status == 2:
+                #### running
+                pass
+            elif task_status == 6:
+                #### task done
+                pass
+            else:
+                ##### idle
+                pass
 
     # def run_async_from_thread(self, robot_id):
     #     loop = asyncio.new_event_loop()

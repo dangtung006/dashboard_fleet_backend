@@ -50,9 +50,11 @@ class DB_HELPER:
     async def insert_many(self, data: dict):
         return await self.collection.insert_many(data)
 
-    async def update_one(self, filter: dict, update: dict):
+    async def update_one(self, filter: dict, update: dict, upsert=False):
         # return await self.collection.update_one(filter=filter, update=update)
-        return await self.collection.update_one(filter=filter, update={"$set": update})
+        return await self.collection.update_one(
+            filter=filter, update={"$set": update}, upsert=upsert
+        )
         # self.collection.update_one({}, {"$set": {}}, upsert=True)
 
     async def update_by_id(self):
