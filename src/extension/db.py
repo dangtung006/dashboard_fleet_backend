@@ -232,7 +232,14 @@ class CHARING_STATIONS(DB_HELPER):
         self.init_collection(self.db["charing_stations"])
 
 
+class ROBOT_STATISTICS(DB_HELPER):
+    def __init__(self):
+        super().__init__()
+        self.init_collection(self.db["robot_statistics"])
+
+
 robot_stations = ROBOT_STATIONS()
+robot_statistics = ROBOT_STATISTICS()
 robots = ROBOTS()
 callers = CALLERS()
 charing_stations = CHARING_STATIONS()

@@ -7,7 +7,7 @@ from src.routes.user import user_route
 from src.routes.auth import auth_route
 from src.routes.map import robot_maps_route
 from src.routes.charing_station import charing_station_route
-
+from src.routes.robot_statistics import robot_statistics_route
 from src.routes.ws import ws_router
 
 route_conf = [
@@ -31,6 +31,7 @@ route_conf = [
     {"name": "/auth", "route": auth_route, "has_sub": []},
     {"name": "/robot_map", "route": robot_maps_route, "has_sub": []},
     {"name": "/charing_station", "route": charing_station_route, "has_sub": []},
+    {"name": "/statistics", "route": robot_statistics_route, "has_sub": []},
 ]
 
 
