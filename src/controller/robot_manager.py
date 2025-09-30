@@ -185,3 +185,17 @@ class RobotManager:
 
     def get_robot_status_by_id(self, robot_id: str):
         return self.robot_connections.get(robot_id, None).status
+
+    def get_recent_stats(self):
+        try:
+            robots = list(self.robot_connections)
+            recent_stats = [
+                {
+                    **self.robots[robot_id],
+                    **self.robot_connections[robot_id].recent_action,
+                }
+                for robot_id in robots
+            ]
+            return recent_stats
+        except Exception as E:
+            print(E)

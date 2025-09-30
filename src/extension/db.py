@@ -139,7 +139,7 @@ class ROBOTS(DB_HELPER):
 
     async def get_robot_with_map(self, robot_id):
         try:
-            user = await self.collection.aggregate(
+            robot = await self.collection.aggregate(
                 [
                     {"$match": {"_id": ObjectId(robot_id)}},
                     {
@@ -154,7 +154,7 @@ class ROBOTS(DB_HELPER):
                 ]
             ).to_list(1)
 
-            return user[0]
+            return robot[0]
 
         except Exception as E:
             print(str(E))
@@ -244,6 +244,25 @@ class ROBOT_STATISTICS(DB_HELPER):
     def __init__(self):
         super().__init__()
         self.init_collection(self.db["robot_statistics"])
+
+    async def get_stats_with_robot(self):
+        try:
+            pipeline = [
+                {
+                    "$lookup": {
+                        "from": "robots",  # collection robots
+                        "localField": "robot_id",  # field trong robot statistics
+                        "foreignField": "_id",  # field trong role
+                        "as": "robot",  # tên field output
+                    }
+                },
+                {"$unwind": {"path": "$robot", "preserveNullAndEmptyArrays": True}},
+            ]
+            return await self.collection.aggregate(pipeline).to_list(length=None)
+
+        except Exception as E:
+            print(str(E))
+            return False
 
 
 robot_stations = ROBOT_STATIONS()
