@@ -484,6 +484,8 @@ class ESAROBOT(ESA_ROBOT_API):
                 )
 
             self.sync_stats = asyncio.create_task(self.sync_statistics_interval())
+        else:
+            self.status["connected"] = status_conn.connected
 
         # if status_conn.connected:
         # threading.Thread(target=self.run_async_from_thread, args=(self.id,)).start()

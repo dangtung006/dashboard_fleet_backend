@@ -106,7 +106,6 @@ class RobotManager:
         #     del self.robots[robot_id]
 
     def get_all_robots(self):
-
         robot_info = list(self.robots.values())
         robot_data = []
 
@@ -116,10 +115,6 @@ class RobotManager:
                 robot_conn = self.robot_connections[robot_id]
                 robot_data.append({**robot, **robot_conn.status})
         return robot_data
-        # for conn in self.robot_connections.values():
-        #     print(conn.robot_id, conn.ip)
-
-        # return self.robots
 
     def get_robot_by_id(self, robot_id: str):
         robot = self.robots.get(robot_id, None)
