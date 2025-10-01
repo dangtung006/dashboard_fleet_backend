@@ -28,8 +28,8 @@ class BaseRobotStatistics(BaseModel):
                     "running": 33,
                     "idle": 5,
                     "charge": 2,
-                    "alarm": 1,
-                    "new_state": 7,  # có thể thêm bất kỳ key nào
+                    # "alarm": 1,
+                    # "new_state": 7,  # có thể thêm bất kỳ key nào
                 },
             }
         }

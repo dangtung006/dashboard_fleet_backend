@@ -46,8 +46,19 @@ async def get_robot_statistics_detail():
 
 @robot_statistics_route.post("/control/seed")
 async def add_statistic(robot: RobotStatisticsCreate):
-
-    resp = await robot_statistics.insert_one(robot.dict(by_alias=True))
-    if not resp:
-        return InternalServerError(msg="Insert statistic failed")
+    robot_id = robot.robot_id
+    print(robot_id)
+    resp = await robot_statistics.insert_one(
+        {
+            "robot_id": robot_statistics.to_object_id(robot.robot_id),
+            "date": robot.date.strftime("%Y-%m-%d"),
+            "runtime_hours": robot.runtime_hours,
+            "distance_traveled": robot.distance_traveled,
+            "error_count": robot.error_count,
+            "status_distribution": robot.status_distribution,
+        }
+    )
+    print("resp:", resp.inserted_id)
+    # if not resp:
+    #     return InternalServerError(msg="Insert statistic failed")
     return SuccessResponse(msg="OK").send(data=True)

@@ -509,7 +509,7 @@ class ESAROBOT(ESA_ROBOT_API):
         status_conn = self._getConnectionByName(API_GROUP.status)
 
         while status_conn.connected:
-            # await self.mark_even_to_sync()
+            await self.mark_even_to_sync()
             now = time.time()
             delt_run_time = now - self.last_sync
 
@@ -528,9 +528,11 @@ class ESAROBOT(ESA_ROBOT_API):
                 get_frame_keys(keys=["odo", "today_odo", "time", "total_time"])
             )
 
+            print("poll_status:", poll_status)
+
             self.recent_action = {
-                "today_time": poll_status["time"],
-                "today_odo": poll_status["today_odo"],
+                "today_time": poll_status["time"] / (1000 * 3600),
+                "today_odo": poll_status["today_odo"] / 1000,
             }
 
             await robot_statistics.update_one(
@@ -556,14 +558,11 @@ class ESAROBOT(ESA_ROBOT_API):
             pass
 
         if charging == True:
-            print("sync time charing")
             now = time.time()
             if self.last_event_sync != "charging":
-                print("mark charging")
                 self.last_event_sync = "charging"
                 self.last_event_sync_time = now
         else:
-            print("sync time")
 
             now = time.time()
 
