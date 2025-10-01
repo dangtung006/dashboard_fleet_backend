@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from src.dto.robot_statistics import RobotStatistics
+from src.dto.robot_statistics import RobotStatisticsCreate, RobotStatisticsUpdate
 
 from src.helper.response import (
     BadRequestError,
@@ -12,7 +12,7 @@ from src.extension.db import robot_statistics, robots
 robot_statistics_route = APIRouter(tags=["Robot Statistics"])
 
 
-@robot_statistics_route.get("/sumary", response_model=list[RobotStatistics])
+@robot_statistics_route.get("/sumary", response_model=list[RobotStatisticsUpdate])
 async def get_sumary_statistics():
     try:
         resp = await robot_statistics.find_list(page=1, page_size=10)
@@ -42,3 +42,12 @@ async def get_robot_statistics_detail():
         return SuccessResponse(msg="OK").send(data=data)
     except Exception as E:
         return InternalServerError(msg=str(E))
+
+
+@robot_statistics_route.post("/control/seed")
+async def add_statistic(robot: RobotStatisticsCreate):
+
+    resp = await robot_statistics.insert_one(robot.dict(by_alias=True))
+    if not resp:
+        return InternalServerError(msg="Insert statistic failed")
+    return SuccessResponse(msg="OK").send(data=True)
