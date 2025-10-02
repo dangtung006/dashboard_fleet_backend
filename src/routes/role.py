@@ -95,13 +95,17 @@ async def update_role_permission(
 async def list_roles():
     # roles = await db.roles.find().to_list(100)
     # return [RoleInDB(id=str(r["_id"]), **r) for r in roles]
+
     try:
-        resp = await roles.find_list(page=1, page_size=10)
-        roleList = []
-
-        async for doc in resp:
-            roleList.append(roles.serialize(doc))
-
+        resp = await roles.get_roles_with_members(page=1, page_size=10)
+        roleList = [roles.serialize(doc) for doc in resp]
+        # {
+        #   "page": 1,
+        #   "page_size": 10,
+        #   "total": 32,
+        #   "data": [ ...roles... ]
+        # }
+        # total = await roles.count_by_conditions({})
         return SuccessResponse(msg="OK").send(data=roleList)
     except Exception as E:
         return InternalServerError(msg=str(E))

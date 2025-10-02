@@ -227,6 +227,42 @@ class ROLES(DB_HELPER):
         super().__init__()
         self.init_collection(self.db["roles"])
 
+    async def get_roles_with_members(self, page: int = 1, page_size: int = 10):
+        skip = (page - 1) * page_size
+
+        try:
+            pipeline = [
+                {
+                    "$lookup": {
+                        "from": "users",
+                        "let": {"roleId": "$_id"},
+                        "pipeline": [
+                            {"$match": {"$expr": {"$eq": ["$role_id", "$$roleId"]}}},
+                            {"$count": "count"},
+                        ],
+                        "as": "userCounts",
+                    }
+                },
+                {
+                    "$addFields": {
+                        "members_count": {
+                            "$ifNull": [{"$arrayElemAt": ["$userCounts.count", 0]}, 0]
+                        }
+                    }
+                },
+                {"$project": {"userCounts": 0}},  # bỏ field tạm
+                # {"$sort": {"name": 1}},
+                {"$skip": skip},
+                {"$limit": page_size},
+            ]
+
+            roles = await self.collection.aggregate(pipeline).to_list(length=None)
+            return roles
+
+        except Exception as E:
+            print(str(E))
+            return False
+
 
 class ROBOT_MAPS(DB_HELPER):
     def __init__(self):
