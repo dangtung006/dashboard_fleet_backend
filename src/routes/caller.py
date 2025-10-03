@@ -8,9 +8,9 @@ from src.helper.response import BadRequestError, NotFoundError, SuccessResponse
 caller_route = APIRouter(tags=["Callers"])
 
 
-@caller_route.get("/robot_by_id/{id}")
+@caller_route.get("/caller_by_id/{id}")
 async def get_detail(id: str):
-    resp = caller_manager.get_caller_by_id(id)
+    resp = await caller_manager.get_caller_by_id(id)
 
     return SuccessResponse(msg="OK").send(
         data=resp if resp else NotFoundError(msg="Robot not found").send()
@@ -19,7 +19,7 @@ async def get_detail(id: str):
 
 @caller_route.get("/get_all")
 async def get_all():
-    resp = caller_manager.get_all_caller()
+    resp = await caller_manager.get_caller_list()
     return SuccessResponse(msg="OK").send(data=resp)
 
 
@@ -31,12 +31,6 @@ async def get_station_list():
     async for doc in resp:
         robot_list.append(robots.serialize(doc))
     return robot_list
-
-
-@caller_route.get("/count_callers")
-async def count_stations():
-    resp = await robots.count_by_conditions({})
-    return resp
 
 
 @caller_route.post("/add")

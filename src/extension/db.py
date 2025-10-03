@@ -23,8 +23,12 @@ class DB_HELPER:
         page = self.page if page == None else page
         page_size = self.page_size if page_size == None else page_size
         skip = (page - 1) * page_size
-        return (
-            self.collection.find({}).skip(skip).sort("created_at", -1).limit(page_size)
+        return await (
+            self.collection.find({})
+            .skip(skip)
+            .sort("created_at", -1)
+            .limit(page_size)
+            .to_list(length=page_size)
         )
 
     async def find_list_by_conditions(

@@ -6,7 +6,13 @@ import threading
 from async_task import listen_task
 from uvicorn import Config, Server
 from src.routes.index import init_app_routes
-from src.app.app_init import http_client, HTTP_CONN, robot_manager, initAcc
+from src.app.app_init import (
+    http_client,
+    HTTP_CONN,
+    robot_manager,
+    caller_manager,
+    initAcc,
+)
 
 app = FastAPIOffline(
     title="ESA ROBOT API DOCUMENT",
@@ -30,7 +36,7 @@ app.add_middleware(
 # APP_HOST = "192.168.0.101"
 # APP_PORT = 3000
 
-APP_HOST = "192.168.68.118"
+APP_HOST = "192.168.68.121"
 APP_PORT = 3000
 
 

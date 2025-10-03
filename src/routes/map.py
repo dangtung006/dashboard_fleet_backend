@@ -30,7 +30,7 @@ async def create_map(map: MapCreate):
 
 
 @robot_maps_route.put(
-    "/update/{map_id}", 
+    "/update/{map_id}",
     # response_model=MapInDB
 )
 async def update_map(map_id: str, robotMap: MapCreate):
