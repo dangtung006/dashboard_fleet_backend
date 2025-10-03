@@ -183,9 +183,81 @@ class USERS(DB_HELPER):
                         "as": "role",  # tên field output
                     }
                 },
-                {"$unwind": {"path": "$role", "preserveNullAndEmptyArrays": True}},
+                # {"$unwind": {"path": "$role", "preserveNullAndEmptyArrays": True}},
+                {
+                    "$unwind": {
+                        "path": "$role",
+                        "preserveNullAndEmptyArrays": True,  # giữ lại user nếu không có role
+                    }
+                },  # lấy object thay vì mảng
+                {
+                    "$addFields": {
+                        "role": {"$ifNull": ["$role", {}]}  # nếu null thì set {}
+                    }
+                },
             ]
             return await self.collection.aggregate(pipeline).to_list(length=None)
+        except Exception as E:
+            print(str(E))
+            return False
+
+    async def get_filter_user(
+        self, page: int = 1, page_size: int = 10, search: str = "", role: str = ""
+    ):
+        try:
+            skip = (page - 1) * page_size
+            pipeline = []
+
+            # 1. Search theo name/email/phone
+            if search:
+                pipeline.append(
+                    {
+                        "$match": {
+                            "$or": [
+                                {"name": {"$regex": search, "$options": "i"}},
+                                # {"email": {"$regex": search, "$options": "i"}},
+                                # {"phone": {"$regex": search, "$options": "i"}},
+                            ]
+                        }
+                    }
+                )
+
+            # 2. Join với roles
+            pipeline += [
+                {
+                    "$lookup": {
+                        "from": "roles",
+                        "localField": "role_id",
+                        "foreignField": "_id",
+                        "as": "role",
+                    }
+                },
+                {"$unwind": {"path": "$role", "preserveNullAndEmptyArrays": True}},
+                {"$addFields": {"role": {"$ifNull": ["$role", {}]}}},
+            ]
+
+            # 3. Lọc role (nếu khác All)
+            if role and role.lower() != "all":
+                pipeline.append(
+                    {"$match": {"role.name": {"$regex": f"^{role}$", "$options": "i"}}}
+                )
+
+            # 4. Dùng facet cho phân trang + totalCount
+            # pipeline.append(
+            #     {
+            #         "$facet": {
+            #             "data": [
+            #                 {"$sort": {"created_at": -1}},
+            #                 {"$skip": skip},
+            #                 {"$limit": page_size},
+            #             ],
+            #             "totalCount": [{"$count": "count"}],
+            #         }
+            #     }
+            # )
+            resp = await self.collection.aggregate(pipeline).to_list(length=None)
+            return [self.serialize(doc) for doc in resp]
+
         except Exception as E:
             print(str(E))
             return False
@@ -203,14 +275,21 @@ class USERS(DB_HELPER):
                             "as": "role",  # output alias
                         }
                     },
-                    {"$unwind": "$role"},  # lấy object thay vì mảng
+                    {
+                        "$unwind": {
+                            "path": "$role",
+                            "preserveNullAndEmptyArrays": True,  # giữ lại user nếu không có role
+                        }
+                    },  # lấy object thay vì mảng
+                    {
+                        "$addFields": {
+                            "role": {"$ifNull": ["$role", {}]}  # nếu null thì set {}
+                        }
+                    },
                 ]
             ).to_list(1)
 
-            print("usererererererererrerererrerererrerererere:::", user[0])
-
-            return user[0]
-
+            return user and len(user) > 0 and user[0] or None
         except Exception as E:
             print(str(E))
             return False

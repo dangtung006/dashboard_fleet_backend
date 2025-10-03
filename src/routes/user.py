@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Query
 
 from src.helper.response import (
     BadRequestError,
@@ -180,14 +180,38 @@ async def list_users(
 
         # resp = await users.find_list(page=1, page_size=10)
         resp = await users.get_users_with_roles()
-        print("respLLL", resp)
-        data = []
-
-        for doc in resp:
-            print("doc::", doc)
-            data.append(roles.serialize(doc))
-
+        data = [roles.serialize(doc) for doc in resp]
         return SuccessResponse(msg="OK").send(data=data)
+    except Exception as E:
+        print("ERRR:", E)
+        return InternalServerError(msg=str(E)).send()
+
+
+@user_route.get("/filter", response_model=list[UserInDB])
+async def list_users(
+    create_user=Depends(
+        verify_permission(USER_AUTH_TYPE.VIEW.value, USER_AUTH_RESOURCE.USER.value)
+    ),
+    x_token: str = Header(...),
+    search: str = Query("", description="Search keyword"),
+    role: str = Query("All", description="Role filter"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+):
+
+    try:
+
+        # resp = await users.find_list(page=1, page_size=10)
+        resp = await users.get_filter_user(
+            page=page, page_size=page_size, search=search, role=role
+        )
+        # data = []
+
+        # for doc in resp:
+        #     print("doc::", doc)
+        #     data.append(roles.serialize(doc))
+
+        return SuccessResponse(msg="OK").send(data=resp)
     except Exception as E:
         print("ERRR:", E)
         return InternalServerError(msg=str(E)).send()
@@ -204,6 +228,7 @@ async def get_user(
     try:
 
         resp = await users.get_user_detail_with_role(user_id)
+        print("resp::", resp)
         if not resp:
             return NotFoundError(msg="User not found").send()
         return SuccessResponse(msg="OK").send(data=users.serialize(resp))
