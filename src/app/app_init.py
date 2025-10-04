@@ -3,6 +3,7 @@ from src.helper.request import MyRequest
 from src.app.app_conf import COMMON_CONF
 from src.controller.robot_manager import RobotManager
 from src.controller.caller_manager import CallerManager
+from src.controller.charging_station_manager import CharingStationManager
 from src.extension.db import roles, users, user_action, robot_statistics
 import httpx
 
@@ -169,3 +170,6 @@ async def initAcc():
 
 robot_manager = RobotManager()  # Global Robot Manager instance
 caller_manager = CallerManager()  # Global Caller Manager instance
+charing_station_manager = (
+    CharingStationManager()
+)  # Global charging station Manager instance

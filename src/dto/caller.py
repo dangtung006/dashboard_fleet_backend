@@ -36,7 +36,7 @@ class CallerBase(BaseModel):
         }
 
 
-class CallerCreate(CallerBase):
+class CallerCreate(CallerBase, BaseDTO):
     pass
 
 

@@ -112,6 +112,10 @@ class CharingStationManager:
         return True
 
     async def get_charing_st_list(self):
+
+        # roles = await db.roles.find().to_list(100)
+        # return [RoleInDB(id=str(r["_id"]), **r) for r in roles]
+
         try:
             resp = await charing_collections.find_list(page=1, page_size=10)
             return [
