@@ -73,6 +73,11 @@ class DB_HELPER:
     async def update_many(self, filter: dict, update: dict):
         return await self.collection.update_many(filter=filter, update=update)
 
+    async def find_one_and_update(self, filter: dict, update: dict, upsert=False):
+        return await self.collection.find_one_and_update(
+            filter=filter, update={"$set": update}, upsert=upsert, return_document=True
+        )
+
     async def delete_one(self, filter):
         return await self.collection.delete_one(filter=filter)
 

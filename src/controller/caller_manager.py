@@ -40,9 +40,10 @@ class CallerManager:
             print("Error getting caller count:", e)
             return []
 
-    ############################################## Caller Management #############################################
+    ############################################## Callers Management #############################################
 
     async def save_caller(self, data: dict):
+
         robot_id = data["id"]
         if robot_id in self.callers:
             await callers.update_one({"id": robot_id}, {"$set": data})
@@ -54,28 +55,39 @@ class CallerManager:
         return self.callers[robot_id]
 
     async def add_caller(self, caller: dict):
-        resp = await callers.insert_one(caller)
-        inserted_id = str(resp.inserted_id)
-        if not inserted_id:
+
+        try:
+            resp = await callers.insert_one(caller)
+            inserted_id = str(resp.inserted_id)
+            return (
+                inserted_id
+                and callers.serialize({**caller, "_id": inserted_id})
+                or None
+            )
+        except Exception as e:
+            print("Error adding caller:", e)
             return None
-        else:
-            added_robot = await callers.find_by_id(inserted_id)
-            # self.robots[inserted_id].update(robots.serialize(updated_robot))
-            self.callers[inserted_id] = callers.serialize(added_robot)
-            return self.callers[inserted_id]
+
+        # added_robot = await callers.find_by_id(inserted_id)
+        # self.robots[inserted_id].update(robots.serialize(updated_robot))
+        # self.callers[inserted_id] = callers.serialize(added_robot)
+        # return self.callers[inserted_id]
 
     async def update_caller(self, caller_id: str, caller: dict):
 
-        resp = await callers.update_one(
-            {"_id": callers.to_object_id(caller_id)}, caller
-        )
+        try:
+            resp = await callers.find_one_and_update(
+                {"_id": callers.to_object_id(caller_id)}, caller
+            )
+            return callers.serialize(resp)
+        except Exception as e:
+            print("Error updating caller:", e)
+            return None
 
         # if resp.modified_count > 0:
         #     updated_robot = await callers.find_by_id(caller_id)
         #     self.callers[caller_id].update(callers.serialize(updated_robot))
         #     return self.callers[caller_id]
-
-        return True
 
     async def remove_caller(self, robot_id: str):
         resp = await callers.delete_by_id(callers.to_object_id(robot_id))
@@ -99,7 +111,7 @@ class CallerManager:
     async def get_caller_by_id(self, caller_id: str):
         try:
             resp = await callers.find_by_id(id=caller_id)
-            return callers.serialize(resp) if resp else None
+            return resp and callers.serialize(resp) or None
 
         except Exception as e:
             print("Error getting caller count:", e)
