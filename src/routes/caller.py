@@ -11,10 +11,7 @@ caller_route = APIRouter(tags=["Callers"])
 @caller_route.get("/caller_by_id/{id}", response_model=CallerInDB)
 async def get_detail(id: str):
     resp = await caller_manager.get_caller_by_id(id)
-
-    return SuccessResponse(msg="OK").send(
-        data=resp if resp else NotFoundError(msg="Robot not found").send()
-    )
+    return SuccessResponse(msg="OK").send(data=resp and resp or None)
 
 
 @caller_route.get("/get_all", response_model=list[CallerInDB])
@@ -41,7 +38,7 @@ async def add(
     return SuccessResponse(msg="OK").send(data=resp)
 
 
-@caller_route.put("/update/{id}", response_model=list[CallerInDB])
+@caller_route.put("/update/{id}", response_model=CallerInDB)
 async def update(id: str, caller: CallerCreate):
     resp = await caller_manager.update_caller(id, caller.dict())
     return SuccessResponse(msg="OK").send(

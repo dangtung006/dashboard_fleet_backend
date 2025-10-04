@@ -1,5 +1,6 @@
 import socket, asyncio, errno, time
 from src.extension.db import callers
+from src.dto.caller import CallerInDB
 
 
 class CallerManager:
@@ -61,7 +62,10 @@ class CallerManager:
             inserted_id = str(resp.inserted_id)
             return (
                 inserted_id
-                and callers.serialize({**caller, "_id": inserted_id})
+                and CallerInDB(
+                    # **callers.serialize({**caller, "_id": inserted_id})
+                    **callers.serialize({**caller, "id": inserted_id})
+                ).model_dump(by_alias=False)
                 or None
             )
         except Exception as e:
@@ -102,7 +106,10 @@ class CallerManager:
     async def get_caller_list(self):
         try:
             resp = await callers.find_list(page=1, page_size=10)
-            return [callers.serialize(doc) for doc in resp]
+            return [
+                CallerInDB(**callers.serialize(doc)).model_dump(by_alias=False)
+                for doc in resp
+            ]
 
         except Exception as e:
             print("Error getting caller count:", e)
@@ -111,7 +118,8 @@ class CallerManager:
     async def get_caller_by_id(self, caller_id: str):
         try:
             resp = await callers.find_by_id(id=caller_id)
-            return resp and callers.serialize(resp) or None
+            resp = CallerInDB(**callers.serialize(resp)).model_dump(by_alias=False)
+            return resp or None
 
         except Exception as e:
             print("Error getting caller count:", e)
