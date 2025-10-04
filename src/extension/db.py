@@ -252,20 +252,25 @@ class USERS(DB_HELPER):
                 )
 
             # 4. Dùng facet cho phân trang + totalCount
-            # pipeline.append(
-            #     {
-            #         "$facet": {
-            #             "data": [
-            #                 {"$sort": {"created_at": -1}},
-            #                 {"$skip": skip},
-            #                 {"$limit": page_size},
-            #             ],
-            #             "totalCount": [{"$count": "count"}],
-            #         }
-            #     }
-            # )
-            resp = await self.collection.aggregate(pipeline).to_list(length=None)
-            return [self.serialize(doc) for doc in resp]
+            pipeline.append(
+                {
+                    "$facet": {
+                        "users": [
+                            # {"$sort": {"created_at": -1}},
+                            {"$skip": skip},
+                            {"$limit": page_size},
+                        ],
+                        # "pagination": [
+                        #     {"$count": "count"},
+                        # ],
+                        "total_count": [{"$count": "count"}],
+                        # "page": page,
+                        # "page_size": page_size,
+                    }
+                }
+            )
+            resp = await self.collection.aggregate(pipeline).to_list(length=1)
+            return self.serialize(len(resp) > 0 and resp[0] or {})
 
         except Exception as E:
             print(str(E))

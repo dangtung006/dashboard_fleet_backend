@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Header, Query
-
+import math
 from src.helper.response import (
     BadRequestError,
     NotFoundError,
@@ -200,18 +200,16 @@ async def list_users(
 ):
 
     try:
-
-        # resp = await users.find_list(page=1, page_size=10)
         resp = await users.get_filter_user(
             page=page, page_size=page_size, search=search, role=role
         )
-        # data = []
-
-        # for doc in resp:
-        #     print("doc::", doc)
-        #     data.append(roles.serialize(doc))
-
-        return SuccessResponse(msg="OK").send(data=resp)
+        data = {**resp, "page": page, "page_size": page_size}
+        data["total_page"] = (
+            data.get("total_count")
+            and math.ceil(data["total_count"][0]["count"] / page_size)
+        ) or 0
+        del data["total_count"]
+        return SuccessResponse(msg="OK").send(data=data)
     except Exception as E:
         print("ERRR:", E)
         return InternalServerError(msg=str(E)).send()
