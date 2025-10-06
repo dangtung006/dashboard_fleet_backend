@@ -1,6 +1,6 @@
 from .base import BaseDTO
 from pydantic import BaseModel, Field
-from typing import Optional, Optional
+from typing import Optional
 
 
 class CharingStationBase(BaseModel):
