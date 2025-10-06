@@ -36,7 +36,7 @@ app.add_middleware(
 # APP_HOST = "192.168.0.101"
 # APP_PORT = 3000
 
-APP_HOST = "192.168.68.118"
+APP_HOST = "192.168.68.126"
 APP_PORT = 3000
 
 

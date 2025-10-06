@@ -4,6 +4,7 @@ from bson import ObjectId
 
 
 class DB_HELPER:
+
     def __init__(self):
         self.client = AsyncIOMotorClient("mongodb://localhost:27017/")
         self.db = self.client["esa_fleet_db"]
@@ -19,12 +20,14 @@ class DB_HELPER:
     async def find_all_by_conditions(self, conditions: dict):
         return self.collection.find(conditions)
 
-    async def find_list(self, page, page_size, sort_key="", sort_dir=1):
+    async def find_list(
+        self, page, page_size, sort_key="", sort_dir=1, exclude_fields=[]
+    ):
         page = self.page if page == None else page
         page_size = self.page_size if page_size == None else page_size
         skip = (page - 1) * page_size
         return await (
-            self.collection.find({})
+            self.collection.find({}, {field: 0 for field in exclude_fields})
             .skip(skip)
             .sort("created_at", -1)
             .limit(page_size)
@@ -32,14 +35,15 @@ class DB_HELPER:
         )
 
     async def find_list_by_conditions(
-        self, conditions, page, page_size, sort_key="", sort_dir=1
+        self, conditions, page, page_size, sort_key="", sort_dir=1, exclude_fields=[]
     ):
         skip = (page - 1) * page_size
         return (
-            self.collection.find(conditions)
+            self.collection.find(conditions, {field: 0 for field in exclude_fields})
             .skip(skip)
             .limit(page_size)
             .sort(sort_key, sort_dir)
+            .to_list(length=page_size)
         )
 
     async def find_by_id(self, id):
