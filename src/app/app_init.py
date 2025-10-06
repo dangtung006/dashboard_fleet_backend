@@ -39,133 +39,125 @@ http_client = (
 
 async def initAcc():
     await user_action.create_idx("expireAt")
-    default_role = await roles.find_one_by_conditions({"name": "default"})
-    if not default_role:
 
-        default_resp = await roles.insert_one(
-            {
-                "name": "default",
-                "status": 1,
-                "permissions": {
-                    "add": {
-                        "monitor": False,
-                        "robot": False,
-                        "robot_detail": False,
-                        "caller": False,
-                        "charging_station": False,
-                        "user": False,
-                        "user_detail": False,
-                        "statistics": False,
-                    },
-                    "view": {
-                        "monitor": False,
-                        "robot": False,
-                        "robot_detail": False,
-                        "caller": False,
-                        "charging_station": False,
-                        "user": False,
-                        "user_detail": False,
-                        "statistics": False,
-                    },
-                    "edit": {
-                        "monitor": False,
-                        "robot": False,
-                        "robot_detail": False,
-                        "caller": False,
-                        "charging_station": False,
-                        "user": False,
-                        "user_detail": False,
-                        "statistics": False,
-                    },
-                    "delete": {
-                        "monitor": False,
-                        "robot": False,
-                        "robot_detail": False,
-                        "caller": False,
-                        "charging_station": False,
-                        "user": False,
-                        "user_detail": False,
-                        "statistics": False,
-                    },
+    #### khởi tạo role mặc định và admin
+    await roles.find_one_and_update(
+        {"name": "default"},
+        {
+            "name": "default",
+            "status": 1,
+            "permissions": {
+                "add": {
+                    "monitor": False,
+                    "robot": False,
+                    "robot_detail": False,
+                    "caller": False,
+                    "charging_station": False,
+                    "user": False,
+                    "user_detail": False,
+                    "statistics": False,
                 },
-            }
-        )
-    admin = await roles.find_one_by_conditions({"name": "root"})
-    if not admin:
-
-        root_rol = await roles.insert_one(
-            {
-                "name": "root",
-                "status": 1,
-                "permissions": {
-                    "add": {
-                        "monitor": True,
-                        "robot": True,
-                        "robot_detail": True,
-                        "caller": True,
-                        "charging_station": True,
-                        "user": True,
-                        "user_detail": True,
-                        "statistics": True,
-                    },
-                    "view": {
-                        "monitor": True,
-                        "robot": True,
-                        "robot_detail": True,
-                        "caller": True,
-                        "charging_station": True,
-                        "user": True,
-                        "user_detail": True,
-                        "statistics": True,
-                    },
-                    "edit": {
-                        "monitor": True,
-                        "robot": True,
-                        "robot_detail": True,
-                        "caller": True,
-                        "charging_station": True,
-                        "user": True,
-                        "user_detail": True,
-                        "statistics": True,
-                    },
-                    "delete": {
-                        "monitor": True,
-                        "robot": True,
-                        "robot_detail": True,
-                        "caller": True,
-                        "charging_station": True,
-                        "user": True,
-                        "user_detail": True,
-                        "statistics": True,
-                    },
+                "view": {
+                    "monitor": False,
+                    "robot": False,
+                    "robot_detail": False,
+                    "caller": False,
+                    "charging_station": False,
+                    "user": False,
+                    "user_detail": False,
+                    "statistics": False,
                 },
-            }
-        )
+                "edit": {
+                    "monitor": False,
+                    "robot": False,
+                    "robot_detail": False,
+                    "caller": False,
+                    "charging_station": False,
+                    "user": False,
+                    "user_detail": False,
+                    "statistics": False,
+                },
+                "delete": {
+                    "monitor": False,
+                    "robot": False,
+                    "robot_detail": False,
+                    "caller": False,
+                    "charging_station": False,
+                    "user": False,
+                    "user_detail": False,
+                    "statistics": False,
+                },
+            },
+        },
+        upsert=True,
+        # return_document=True,  # Return the updated document
+    )
+    admin_role = await roles.find_one_and_update(
+        {"name": "admin"},
+        {
+            "name": "admin",
+            "status": 1,
+            "permissions": {
+                "add": {
+                    "monitor": True,
+                    "robot": True,
+                    "robot_detail": True,
+                    "caller": True,
+                    "charging_station": True,
+                    "user": True,
+                    "user_detail": True,
+                    "statistics": True,
+                },
+                "view": {
+                    "monitor": True,
+                    "robot": True,
+                    "robot_detail": True,
+                    "caller": True,
+                    "charging_station": True,
+                    "user": True,
+                    "user_detail": True,
+                    "statistics": True,
+                },
+                "edit": {
+                    "monitor": True,
+                    "robot": True,
+                    "robot_detail": True,
+                    "caller": True,
+                    "charging_station": True,
+                    "user": True,
+                    "user_detail": True,
+                    "statistics": True,
+                },
+                "delete": {
+                    "monitor": True,
+                    "robot": True,
+                    "robot_detail": True,
+                    "caller": True,
+                    "charging_station": True,
+                    "user": True,
+                    "user_detail": True,
+                    "statistics": True,
+                },
+            },
+        },
+        upsert=True,
+        # return_document=True,  # Return the updated document
+    )
 
-        root_acc = await users.find_one_by_conditions({"email": "root"})
+    admin_role = roles.serialize(admin_role)
+    root_acc = await users.find_one_by_conditions({"email": "root@admin.com"})
 
-        if root_acc:
-            root_acc = users.serialize(root_acc)
-            # delete before create new root
-            resp = await users.delete_by_id(id=root_acc["_id"])
-
+    if not root_acc:
         await users.insert_one(
             {
-                "name": "Admin",
-                "email": "root",
-                "password": (
-                    root_acc["password"]
-                    if root_acc and root_acc["password"]
-                    else "123456"
-                ),
-                "role_id": users.to_object_id(root_rol.inserted_id),  # lưu _id từ Role
+                "name": "admin",
+                "email": "root@admin.com",
+                "password": "123456",
+                "role_id": users.to_object_id(admin_role["_id"]),  # lưu _id từ Role
                 "status": "active",
-            }
+            },
         )
-
-
-# async def initStats():
-#     pass
+    print("Inited root account:::", users.serialize(root_acc))
 
 
 robot_manager = RobotManager()  # Global Robot Manager instance
