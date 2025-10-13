@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from src.dto.map import RobotMapCreate, RobotMapInDB
+from bson import ObjectId
 
 from src.helper.response import (
     BadRequestError,
@@ -59,10 +60,39 @@ async def list_maps():
 @robot_maps_route.get("/{map_id}", response_model=RobotMapInDB)
 async def get_map(map_id: str):
     try:
-        resp = await robot_maps.find_by_id(id=map_id)
-        if not resp:
-            return NotFoundError(msg="Role not found")
-        return SuccessResponse(msg="OK").send(data=robot_maps.serialize(resp))
+        # resp = await robot_maps.find_by_id(id=map_id)
+
+        pipeline = [
+            {"$match": {"_id": ObjectId(map_id)}},
+            {
+                "$lookup": {
+                    "from": "robots",  # tên collection robot
+                    "localField": "robots_in_use",  # field trong map (có thể là list)
+                    "foreignField": "_id",  # field trong robot
+                    "as": "robot_in_use_info",  # alias chứa danh sách robot match
+                }
+            },
+            {
+                "$project": {
+                    "_id": 1,
+                    "map_name": 1,
+                    "map_desc": 1,
+                    "map_date": 1,
+                    "map_json_data": 1,
+                    "robot_in_use_info.robot_name": 1,
+                    "robot_in_use_info.robot_ip": 1,
+                    "robot_in_use_info._id": 1,
+                }
+            },
+        ]
+
+        resp = await robot_maps.collection.aggregate(pipeline).to_list(1)
+        data = [robot_maps.serialize(doc) for doc in resp]
+        data = len(data) > 0 and data[0] or None
+
+        if not data:
+            return NotFoundError(msg="not found")
+        return SuccessResponse(msg="OK").send(data=data)
 
     except Exception as E:
         return InternalServerError(msg=str(E))
@@ -120,14 +150,13 @@ async def delete_map(map_id: str):
         return InternalServerError(msg=str(E))
 
 
-@robot_maps_route.patch("/load_map/multi/{map_id}")
+@robot_maps_route.patch("/push_robot/multi/{map_id}")
 async def load_map_to_robots(map_id: str, robots: list[str]):
     list_of_ids = [robot_maps.to_object_id(id) for id in robots]
-    resp = await robot_maps.update_one_v2(
+    resp = await robot_maps.update_one(
         {"_id": robot_maps.to_object_id(map_id)},
-        {"$addToSet": {"robots_in_use": {"$each": list_of_ids}}},
+        {"robots_in_use": list_of_ids},
     )
-    print("resp::", resp)
     return SuccessResponse(msg="OK").send(data=True)
 
 
@@ -136,6 +165,7 @@ async def unload_map_to_robot(map_id: str, robot: str):
 
     resp = await robot_maps.update_one_v2(
         {"_id": robot_maps.to_object_id(map_id)},
+        # {"$addToSet": {"robots_in_use": {"$each": list_of_ids}}},
         {"$pull": {"robots_in_use": robot_maps.to_object_id(robot)}},
     )
     return SuccessResponse(msg="OK").send(data=True)

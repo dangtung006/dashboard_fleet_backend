@@ -34,12 +34,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.add_middleware(GZipMiddleware, minimum_size=1000)
+# app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # APP_HOST = "192.168.0.101"
 # APP_PORT = 3000
 
-APP_HOST = "192.168.68.123"
+APP_HOST = "192.168.68.115"
 APP_PORT = 3000
 
 
