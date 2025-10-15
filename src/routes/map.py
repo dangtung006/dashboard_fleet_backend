@@ -16,16 +16,6 @@ robot_maps_route = APIRouter(tags=["Maps"])
 @robot_maps_route.get("")
 async def list_maps():
     try:
-        # resp = await robot_maps.find_list(
-        #     page=1, page_size=10, exclude_fields=["map_json_data"]
-        # )
-
-        # data = [
-        #     # MapInDB(**robot_maps.serialize(doc)).model_dump(by_alias=False)
-        #     robot_maps.serialize(doc)
-        #     for doc in resp
-        # ]
-
         pipeline = [
             {
                 "$lookup": {
@@ -41,6 +31,8 @@ async def list_maps():
                     "map_name": 1,
                     "map_desc": 1,
                     "map_date": 1,
+                    "map_status": 1,
+                    "map_json_data": 1,
                     "robot_in_use_info.robot_name": 1,
                     "robot_in_use_info.robot_ip": 1,
                     "robot_in_use_info._id": 1,

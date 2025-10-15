@@ -1,6 +1,7 @@
 from .base import BaseDTO
 from pydantic import BaseModel, Field
 from typing import Optional
+from .robot import Robot
 
 
 class RobotMapBase(BaseModel):
@@ -15,10 +16,32 @@ class RobotMapBase(BaseModel):
         default_factory=lambda: "", example="68ba97b0530bf52840ff422c"
     )
 
+    class Config:
+        populate_by_name = True
+        allow_population_by_field_name = True
+        json_schema_extra = {
+            # "example": {
+            #     "robot_id": "68dca231e07f5fcb86c61488",
+            #     "date": "2025-09-29",
+            #     "runtime_hours": 1.5,
+            #     "distance_traveled": 42.3,
+            #     "error_count": 2,
+            #     "status_distribution": {
+            #         "offline": 12,
+            #         "running": 33,
+            #         "idle": 5,
+            #         "charge": 2,
+            #         # "alarm": 1,
+            #         # "new_state": 7,  # có thể thêm bất kỳ key nào
+            #     },
+            # }
+        }
+
 
 class RobotMapCreate(RobotMapBase):
     pass
 
 
 class RobotMapInDB(RobotMapBase):
-    id: str
+    id: Optional[str] = Field(alias="_id", default=None)
+    robots_in_use: Robot

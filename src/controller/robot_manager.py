@@ -20,7 +20,7 @@ class RobotManager:
         for id in self.robots:
 
             robot_info = self.robots[id]
-            robot_id = robot_info["_id"]
+            robot_id = robot_info["id"]
             ip = robot_info["robot_ip"]
             self.robot_connections[robot_id] = ESAROBOT(robot_id, ip, env="production")
             await self.robot_connections[robot_id].connect_all()
@@ -110,7 +110,7 @@ class RobotManager:
         robot_data = []
 
         for robot in robot_info:
-            robot_id = robot["_id"]
+            robot_id = robot["id"]
             if robot_id in self.robot_connections:
                 robot_conn = self.robot_connections[robot_id]
                 robot_data.append({**robot, **robot_conn.status})

@@ -136,7 +136,7 @@ class DB_HELPER:
                 return [convert_value(i) for i in v]
             return v
 
-        return {k: convert_value(v) for k, v in doc.items()}
+        return {f'{k == "_id" and "id" or k}': convert_value(v) for k, v in doc.items()}
 
 
 class ROBOT_STATIONS(DB_HELPER):
