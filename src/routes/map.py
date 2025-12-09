@@ -113,10 +113,10 @@ async def create_map(map: RobotMapCreate):
 
 @robot_maps_route.put("/update/{map_id}", response_model=RobotMapInDB)
 async def update_map(map_id: str, robotMap: RobotMapCreate):
+
     try:
         req_body = robotMap.dict()
-        data = await robot_maps.find_by_id(id=map_id)
-
+        print("req_body::", req_body)
         resp = await robot_maps.find_one_and_update(
             {"_id": robot_maps.to_object_id(map_id)}, req_body
         )

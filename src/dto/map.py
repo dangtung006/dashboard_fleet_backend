@@ -44,4 +44,3 @@ class RobotMapCreate(RobotMapBase):
 
 class RobotMapInDB(RobotMapBase):
     id: Optional[str] = Field(alias="_id", default=None)
-    robots_in_use: Robot

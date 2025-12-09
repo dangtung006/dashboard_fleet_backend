@@ -153,11 +153,11 @@ async def initAcc():
                 "name": "admin",
                 "email": "root@admin.com",
                 "password": "123456",
-                "role_id": users.to_object_id(admin_role["_id"]),  # lưu _id từ Role
+                "role_id": users.to_object_id(admin_role["id"]),  # lưu _id từ Role
                 "status": "active",
             },
         )
-    print("Inited root account:::", users.serialize(root_acc))
+    print("Inited root account:::", root_acc)
 
 
 robot_manager = RobotManager()  # Global Robot Manager instance

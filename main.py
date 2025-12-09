@@ -1,6 +1,9 @@
 from fastapi_offline import FastAPIOffline
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
 import asyncio
 import httpx
 import threading
@@ -15,6 +18,8 @@ from src.app.app_init import (
     initAcc,
 )
 
+FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "dist")
+
 app = FastAPIOffline(
     title="ESA ROBOT API DOCUMENT",
     description="API composed by ESA developer",
@@ -28,7 +33,7 @@ app = FastAPIOffline(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -39,14 +44,15 @@ app.add_middleware(
 # APP_HOST = "192.168.0.101"
 # APP_PORT = 3000
 
-APP_HOST = "192.168.68.118"
+APP_HOST = "localhost"
 APP_PORT = 3000
 
 
 ## Tạo AsyncClient khi app khởi động
 @app.on_event("startup")
 async def startup_event():
-    await robot_manager.init_connections_from_config()
+    # await robot_manager.init_connections_from_config()
+    pass
 
     # def run_async_from_thread():
     #     loop = asyncio.new_event_loop()
@@ -59,10 +65,27 @@ async def startup_event():
 
 
 ## Đóng client đúng cách để tránh rò rỉ socket
-@app.on_event("shutdown")
-async def shutdown_event():
-    if http_client and HTTP_CONN == "pool":
-        await http_client.aclose()
+# @app.on_event("shutdown")
+# async def shutdown_event():
+#     if http_client and HTTP_CONN == "pool":
+#         await http_client.aclose()
+
+# init_app_routes(app=app, host=APP_HOST, port=APP_PORT)
+
+if os.path.isdir(FRONTEND_DIR):
+
+    app.mount(
+        "/assets",
+        StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets")),
+        name="assets",
+    )
+
+    @app.get("/{full_path:path}")
+    async def serve_react(full_path: str):
+        print("full_path", full_path)
+        if "api" not in full_path:
+            index_path = os.path.join(FRONTEND_DIR, "index.html")
+            return FileResponse(index_path)
 
 
 async def run_server():
@@ -75,8 +98,6 @@ async def main():
     init_app_routes(app=app, host=APP_HOST, port=APP_PORT)
     await initAcc()
     await run_server()
-    # await asyncio.gather(run_server())
-    # await asyncio.gather(run_server(), listen_task())
 
 
 if __name__ == "__main__":

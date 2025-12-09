@@ -38,7 +38,7 @@ class DB_HELPER:
         self, conditions, page, page_size, sort_key="", sort_dir=1, exclude_fields=[]
     ):
         skip = (page - 1) * page_size
-        return (
+        return await (
             self.collection.find(conditions, {field: 0 for field in exclude_fields})
             .skip(skip)
             .limit(page_size)

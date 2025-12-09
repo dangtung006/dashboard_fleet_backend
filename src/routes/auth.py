@@ -61,29 +61,34 @@ async def login(request: Request, response: Response, formData: AuthBase):
         user = users.serialize(user)
 
         print("user:::", user)
-        print("user:::", user["_id"])
+        print("user:::", user["id"])
 
         session_id = str(uuid4())
         print("session_id:::", session_id)
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now()
+        print("now ::", now.timestamp())
         expire_at = now + datetime.timedelta(hours=4)
-
-        token = await user_action.insert_one(
+        print("expire_at::::", expire_at.timestamp())
+        token = await user_action.find_one_and_update(
+            {"token_id": session_id},
             {
                 "token_id": session_id,
-                "user_id": user["_id"],
+                "user_id": user["id"],
                 "created_at": now,
-                "expireAt": expire_at,
-            }
+                "expireAt": int(expire_at.timestamp() * 1000),
+            },
+            upsert=True,
         )
 
-        print("token:::", token)
+        print("token:::", user_action.serialize(token))
 
         if not token:
             return BadRequestError("Invalid Token").send()
         # response.set_cookie(key=session_id, value="tundang", httponly=True, max_age=100)
         # token = user_action.serialize(token)
-        return SuccessResponse(msg="OK").send(data={**user, "token": session_id})
+        return SuccessResponse(msg="OK").send(
+            data={"token": session_id, "expireAt": token["expireAt"]}
+        )
 
     except Exception as E:
         print(E)
