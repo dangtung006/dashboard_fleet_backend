@@ -17,13 +17,13 @@ class RobotManager:
         async for doc in resp:
             self.robots[str(doc["_id"])] = robots.serialize(doc)
 
-        for id in self.robots:
+        # for id in self.robots:
 
-            robot_info = self.robots[id]
-            robot_id = robot_info["id"]
-            ip = robot_info["robot_ip"]
-            self.robot_connections[robot_id] = ESAROBOT(robot_id, ip, env="production")
-            await self.robot_connections[robot_id].connect_all()
+        #     robot_info = self.robots[id]
+        #     robot_id = robot_info["id"]
+        #     ip = robot_info["robot_ip"]
+        #     self.robot_connections[robot_id] = ESAROBOT(robot_id, ip, env="production")
+        #     await self.robot_connections[robot_id].connect_all()
 
     def get_conn(self, robot_id, port_name):
         return self.robot_connections[robot_id][port_name]
@@ -107,6 +107,7 @@ class RobotManager:
 
     def get_all_robots(self):
         robot_info = list(self.robots.values())
+        return robot_info
         robot_data = []
 
         for robot in robot_info:

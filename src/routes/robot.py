@@ -21,9 +21,8 @@ async def get_detail(id: str):
 @robot_route.get("/get_all")
 async def get_all():
     resp = robot_manager.get_all_robots()
-    return SuccessResponse(msg="OK").send(
-        data=resp if resp else NotFoundError(msg="Robot not found").send()
-    )
+    print("resp:", resp)
+    return SuccessResponse(msg="OK").send(data=resp)
 
 
 @robot_route.get("/")

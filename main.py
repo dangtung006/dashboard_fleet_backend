@@ -1,6 +1,5 @@
 from fastapi_offline import FastAPIOffline
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
@@ -10,6 +9,7 @@ import threading
 from async_task import listen_task
 from uvicorn import Config, Server
 from src.routes.index import init_app_routes
+from src.app.app_conf import COMMON_CONF
 from src.app.app_init import (
     http_client,
     HTTP_CONN,
@@ -18,6 +18,10 @@ from src.app.app_init import (
     initAcc,
 )
 
+APP_CONF = COMMON_CONF["app"]
+APP_HOST = APP_CONF["host"]
+APP_PORT = APP_CONF["port"]
+VALID_ORIGIN = APP_CONF["valid_origin"]
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "dist")
 
 app = FastAPIOffline(
@@ -33,25 +37,17 @@ app = FastAPIOffline(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=VALID_ORIGIN,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# app.add_middleware(GZipMiddleware, minimum_size=1000)
-
-# APP_HOST = "192.168.0.101"
-# APP_PORT = 3000
-
-APP_HOST = "localhost"
-APP_PORT = 3000
-
 
 ## Tạo AsyncClient khi app khởi động
 @app.on_event("startup")
 async def startup_event():
-    # await robot_manager.init_connections_from_config()
+    await robot_manager.init_connections_from_config()
     pass
 
     # def run_async_from_thread():
@@ -70,7 +66,8 @@ async def startup_event():
 #     if http_client and HTTP_CONN == "pool":
 #         await http_client.aclose()
 
-# init_app_routes(app=app, host=APP_HOST, port=APP_PORT)
+##### should init before UI Route
+init_app_routes(app=app, host=APP_HOST, port=APP_PORT)
 
 if os.path.isdir(FRONTEND_DIR):
 
@@ -82,10 +79,8 @@ if os.path.isdir(FRONTEND_DIR):
 
     @app.get("/{full_path:path}")
     async def serve_react(full_path: str):
-        print("full_path", full_path)
-        if "api" not in full_path:
-            index_path = os.path.join(FRONTEND_DIR, "index.html")
-            return FileResponse(index_path)
+        index_path = os.path.join(FRONTEND_DIR, "index.html")
+        return FileResponse(index_path)
 
 
 async def run_server():
@@ -95,7 +90,6 @@ async def run_server():
 
 
 async def main():
-    init_app_routes(app=app, host=APP_HOST, port=APP_PORT)
     await initAcc()
     await run_server()
 
